@@ -1,99 +1,115 @@
 ;*******************************************************************************
 ;* Language  : Motorola/Freescale/NXP 68HC11 Assembly Language (aspisys.com/ASM11)
 ;*******************************************************************************
-;                  BUFFALO
-; "Bit User's Fast Friendly Aid to Logical Operation"
-;
-; Rev 2.0 - 4/23/85 - added disassembler.
-;                   - variables now PTRn and TMPn.
-; Rev 2.1 - 4/29/85 - added byte erase to chgbyt routine.
-; Rev 2.2 - 5/16/85 - added hooks for evb board - acia
-;                     drivers, init and host routines.
-;           7/8/85  - fixed dump wraparound problem.
-;           7/10/85 - added evm board commands.
-;                   - added fill instruction.
-;           7/18/85 - added jump to EEPROM.
-; Rev 2.3 - 8/22/85 - call targco to disconnect sci from host
-;                     in reset routine for evb board.
-;           10/3/85 - modified load for download through terminal.
-; Rev 2.4 - 7/1/86  - Changed DFLOP address to fix conflicts with
-;                     EEPROM.  (was at A000)
-; Rev 2.5 - 9/8/86  - Modified to provide additional protection from
-;                     program run-away on power down.  Also fixed bugs
-;                     in MM and MOVE.  Changed to 1 stop bit from 2.
-; Rev 2.6 - 9/25/86 - Modified boot routine for variable length download
-;                     for use with 'HC11E8.
-; Rev 3.0   1/15/87 - EEPROM programming routines consolidated into WRITE.
-;                     Fill, Assem, and breakpoints will now do EEPROM.
-;                   - Added compare a to $0D to WSKIP routine.
-;           2/11/87 - Set up load to detect receiver error.
-; Rev 3.2   7/7/87  - Add disassembly to trace.
-;                   - Add entries to jump table.
-;           9/20/87 - Rewrote trace to use XIRQ, added STOPAT Command
-;           11/24/87- Write block protect reg for 'E9 version
-;                   - Modified variable length download for use
-;                       with 'E9 bootloader (XBOOT command)
-; Rev 3.3   3/17/88 - Set I bit to block interrupts on Warm Start and
-;                       return from CALL command.
-;                   - Added EEMOD Command.
-;                   - Rearranged source so that HELP command overlaps
-;                       EEPROM in test mode.
-;           3/24/88 - Added '+', '-', '=', '.' to MEM and ASM commands.
-;                   - Added check for 16 byte boundary to MEM
-;                       space sub-command.
-;                   - LOAD command now puts dummy (~) command into
-;                       inbuff so that any stray cr's won`t hang.
-; Rev 3.4   8/15/88 - Changed WRITE subroutine so that config register
-;                       gets byte erased before programmed.  The original
-;                       value of config is used for EEBYTE so that config
-;                       RAM value doesn't get changed in test mode.
-;           8/17/88 - Fixed MOVE command so that it doesn't hang when move
-;                       is done to a ROM location.
-;                   - Added OFFSET command for download offset capability.
-                    #OptRelOff
-;****************************************************
-;    Although the information contained herein,    *
-;    as well as any information provided relative  *
-;    thereto, has been carefully reviewed and is   *
-;    believed accurate, Motorola assumes no        *
-;    liability arising out of its application or   *
-;    use, neither does it convey any license under *
-;    its patent rights nor the rights of others.   *
-;****************************************************
+;*                  BUFFALO
+;* "Bit User's Fast Friendly Aid to Logical Operation"
+;*
+;* Rev 2.0 - 4/23/85 - added disassembler.
+;*                   - variables now PTRn and TMPn.
+;* Rev 2.1 - 4/29/85 - added byte erase to chgbyt routine.
+;* Rev 2.2 - 5/16/85 - added hooks for evb board - acia
+;*                     drivers, init and host routines.
+;*           7/8/85  - fixed dump wraparound problem.
+;*           7/10/85 - added evm board commands.
+;*                   - added fill instruction.
+;*           7/18/85 - added jump to EEPROM.
+;* Rev 2.3 - 8/22/85 - call targco to disconnect sci from host
+;*                     in reset routine for evb board.
+;*           10/3/85 - modified load for download through terminal.
+;* Rev 2.4 - 7/1/86  - Changed DFLOP address to fix conflicts with
+;*                     EEPROM.  (was at A000)
+;* Rev 2.5 - 9/8/86  - Modified to provide additional protection from
+;*                     program run-away on power down.  Also fixed bugs
+;*                     in MM and MOVE.  Changed to 1 stop bit from 2.
+;* Rev 2.6 - 9/25/86 - Modified boot routine for variable length download
+;*                     for use with 'HC11E8.
+;* Rev 3.0   1/15/87 - EEPROM programming routines consolidated into WRITE.
+;*                     Fill, Assem, and breakpoints will now do EEPROM.
+;*                   - Added compare a to $0D to WSKIP routine.
+;*           2/11/87 - Set up load to detect receiver error.
+;* Rev 3.2   7/7/87  - Add disassembly to trace.
+;*                   - Add entries to jump table.
+;*           9/20/87 - Rewrote trace to use XIRQ, added STOPAT Command
+;*           11/24/87- Write block protect reg for 'E9 version
+;*                   - Modified variable length download for use
+;*                       with 'E9 bootloader (XBOOT command)
+;* Rev 3.3   3/17/88 - Set I bit to block interrupts on Warm Start and
+;*                       return from CALL command.
+;*                   - Added EEMOD Command.
+;*                   - Rearranged source so that HELP command overlaps
+;*                       EEPROM in test mode.
+;*           3/24/88 - Added '+', '-', '=', '.' to MEM and ASM commands.
+;*                   - Added check for 16 byte boundary to MEM
+;*                       space sub-command.
+;*                   - LOAD command now puts dummy (~) command into
+;*                       inbuff so that any stray cr's won`t hang.
+;* Rev 3.4   8/15/88 - Changed WRITE subroutine so that config register
+;*                       gets byte erased before programmed.  The original
+;*                       value of config is used for EEBYTE so that config
+;*                       RAM value doesn't get changed in test mode.
+;*           8/17/88 - Fixed MOVE command so that it doesn't hang when move
+;*                       is done to a ROM location.
+;*                   - Added OFFSET command for download offset capability.
+;*
+;*******************************************************************************
+;* Although the information contained herein, as well as any information       *
+;* provided relative thereto, has been carefully reviewed and is believed      *
+;* accurate, Motorola assumes no liability arising out of its application or   *
+;* use, neither does it convey any license under its patent rights nor the     *
+;* rights of others.                                                           *
+;*******************************************************************************
 
 ;***************
-;   EQUATES   *
+;*   EQUATES   *
 ;***************
-; *Author equ  Tony Fourcroy
-RAMBS               equ       $0000               ; start of ram
-REGBS               equ       $1000               ; start of registers
-ROMBS               equ       $E000               ; start of rom
+;Author             equ       Tony Fourcroy
+
+RAM                 equ       $0000               ; start of ram
+REGS                equ       $1000               ; start of registers
+ROM                 equ       $E000               ; start of rom
 DSTREE              equ       $B600               ; start of eeprom
 DENDEE              equ       $B7FF               ; end of eeprom
-PORTE               equ       REGBS+$0A           ; port e
-CFORC               equ       REGBS+$0B           ; force output compare
-TCNT                equ       REGBS+$0E           ; timer count
-TOC5                equ       REGBS+$1E           ; oc5 reg
-TCTL1               equ       REGBS+$20           ; timer control 1
-TMSK1               equ       REGBS+$22           ; timer mask 1
-TFLG1               equ       REGBS+$23           ; timer flag 1
-TMSK2               equ       REGBS+$24           ; timer mask 2
-BAUD                equ       REGBS+$2B           ; sci baud reg
-SCCR1               equ       REGBS+$2C           ; sci control1 reg
-SCCR2               equ       REGBS+$2D           ; sci control2 reg
-SCSR                equ       REGBS+$2E           ; sci status reg
-SCDAT               equ       REGBS+$2F           ; sci data reg
-BPROT               equ       REGBS+$35           ; block protect reg
-OPTION              equ       REGBS+$39           ; option reg
-COPRST              equ       REGBS+$3A           ; cop reset reg
-PPROG               equ       REGBS+$3B           ; ee prog reg
-HPRIO               equ       REGBS+$3C           ; hprio reg
-CONFIG              equ       REGBS+$3F           ; config register
+
+;-------------------------------------------------------------------------------
+
+?                   macro     Offset
+                    mreq      1:Offset
+~label~             set       REGS+~1~
+                    endm
+
+;-------------------------------------------------------------------------------
+
+PORTA               @?        $00                 ; port a
+PORTD               @?        $08                 ; port d
+DDRD                @?        $09                 ; ddrd
+PORTE               @?        $0A                 ; port e
+CFORC               @?        $0B                 ; force output compare
+TCNT                @?        $0E                 ; timer count
+TOC5                @?        $1E                 ; oc5 reg
+TCTL1               @?        $20                 ; timer control 1
+TMSK1               @?        $22                 ; timer mask 1
+TFLG1               @?        $23                 ; timer flag 1
+TMSK2               @?        $24                 ; timer mask 2
+BAUD                @?        $2B                 ; sci baud reg
+SCCR1               @?        $2C                 ; sci control1 reg
+SCCR2               @?        $2D                 ; sci control2 reg
+SCSR                @?        $2E                 ; sci status reg
+SCDR                @?        $2F                 ; sci data reg
+BPROT               @?        $35                 ; block protect reg
+OPTION              @?        $39                 ; option reg
+COPRST              @?        $3A                 ; cop reset reg
+PPROG               @?        $3B                 ; ee prog reg
+HPRIO               @?        $3C                 ; hprio reg
+CONFIG              @?        $3F                 ; config register
+XINIT               equ       $103D               ; Out-of-reset INIT
+
 DFLOP               equ       $4000               ; evb d flip flop
 DUART               equ       $D000               ; duart address
-PORTA               equ       DUART
-PORTB               equ       DUART+8
-ACIA                equ       $9800               ; acia address
+
+DPORTA              equ       DUART
+DPORTB              equ       DUART+8
+ACIA                equ       $9800               ; ACIA address
+
 PROMPT              equ       '>'
 BUFFLNG             equ       35
 CTLA                equ       $01                 ; exit host or assembler
@@ -102,17 +118,43 @@ CTLW                equ       $17                 ; wait
 CTLX                equ       $18                 ; abort
 DEL                 equ       $7F                 ; abort
 EOT                 equ       $04                 ; end of text/table
-SWI                 equ       $3F
+SWI                 equ       $3F                 ; SWI OPCODE
+JMP                 equ       $7E                 ; JMP OPCODE
+
+CR                  equ       13
+LF                  equ       10
+
+;*******************************************************************************
+; Macros
+
+OUTA                macro     [#]Character
+                    lda       ~@~
+                    jsr       ~0~
+                    endm
+
+;-------------------------------------------------------------------------------
+
+cmd                 macro     'CMD'[,CMD]
+                    mreq      1:'CMD'[,CMD]
+                    mstr      1
+                    mdef      2,~1.2.{:1-2}~
+                    fcb       :1-2                ; LENGTH OF COMMAND
+                    fcc       ~1~                 ; ASCII COMMAND STRING
+                    dw        ~2~                 ; COMMAND ADDRESS
+                    endm
+
+;*******************************************************************************
 
 ;***************
-;     RAM     *
+;*     RAM     *
 ;***************
-                    org       $2D
-;*** Buffalo ram space ***
+                    #RAM
+                    org       $2D                 ;*** Buffalo ram space ***
+
                     rmb       20                  ; user stack area
 USTACK              rmb       30                  ; monitor stack area
 STACK               rmb       1
-REGS                rmb       9                   ; user's pc,y,x,a,b,c
+REGISTERS           rmb       9                   ; user's pc,y,x,a,b,c
 SP                  rmb       2                   ; user's sp
 INBUFF              rmb       BUFFLNG             ; input buffer
 ENDBUFF             equ       *
@@ -130,7 +172,8 @@ CHRCNT              rmb       1                   ; # characters output on curre
 PTRMEM              rmb       2                   ; current memory location
 LDOFFST             rmb       2                   ; offset for download
 
-;*** Buffalo variables - used by: ***
+          ;*** Buffalo variables - used by: ***
+
 PTR0                rmb       2                   ; main,readbuff,incbuff,AS
 PTR1                rmb       2                   ; main,BR,DU,MO,AS,EX
 PTR2                rmb       2                   ; EX,DU,MO,AS
@@ -144,7 +187,9 @@ TMP1                rmb       1                   ; main,hexbin,buffarg,termarg
 TMP2                rmb       1                   ; GO,HO,AS,LOAD
 TMP3                rmb       1                   ; AS,LOAD
 TMP4                rmb       1                   ; TR,HO,ME,AS,LOAD
-;*** Vector jump table ***
+
+          ;*** Vector jump table ***
+
 JSCI                rmb       3
 JSPI                rmb       3
 JPAIE               rmb       3
@@ -166,102 +211,101 @@ JILLOP              rmb       3
 JCOP                rmb       3
 JCLM                rmb       3
 
-;*****************
-;
-; ROM starts here *
-;
-;*****************
+;*******************************************************************************
+;* ROM starts here
+;*******************************************************************************
 
-                    org       ROMBS
+                    #ROM
+                    org       ROM
 
-;*****************
+;*******************************************************************************
 ;**  BUFFALO - This is where Buffalo starts
 ;** out of reset.  All initialization is done
 ;** here including determination of where the
 ;** user terminal is (SCI,ACIA, or DUART).
-;*****************
+;*******************************************************************************
 
-BUFFALO             ldx       #PORTE
-                    brclr     0,X,$01,BUFISIT     ; if bit 0 of port e is 1
+BUFFALO             proc
+                    ldx       #PORTE
+                    brclr     ,X,#1,Skip@@        ; if bit 0 of port e is 1
                     jmp       DSTREE              ; then jump to the start of EEPROM
 
-BUFISIT             ldaa      #$93
-                    staa      OPTION              ; adpu, dly, irqe, cop
-                    ldaa      #$00
-                    staa      TMSK2               ; timer pre = %1 for trace
-                    ldaa      #$00
-                    staa      BPROT               ; clear 'E9 eeprom block protect
+Skip@@              lda       #$93
+                    sta       OPTION              ; adpu, dly, irqe, cop
+                    clra
+                    sta       TMSK2               ; timer pre = %1 for trace
+                    sta       BPROT               ; clear 'E9 eeprom block protect
                     ldx       #DSTREE             ; set up default eeprom address range
                     stx       STREE
                     ldx       #DENDEE
                     stx       ENDEE
-                    ldx       #$0000              ; set up default download offset
+                    clrx                          ; set up default download offset
                     stx       LDOFFST
                     lds       #STACK              ; monitor stack pointer
                     jsr       VECINIT
                     ldx       #USTACK
                     stx       SP                  ; default user stack
-                    ldaa      TCTL1
-                    oraa      #$03
-                    staa      TCTL1               ; force oc5 pin high for trace
-                    ldaa      #$D0
-                    staa      REGS+8              ; default user ccr
+                    lda       TCTL1
+                    ora       #$03
+                    sta       TCTL1               ; force oc5 pin high for trace
+                    lda       #$D0
+                    sta       REGISTERS+8         ; default user ccr
                     ldd       #$3F0D              ; initial command is ?
                     std       INBUFF
                     jsr       BPCLR               ; clear breakpoints
                     clr       AUTOLF
                     inc       AUTOLF              ; auto cr/lf = on
 
-; Determine type of external comm device - none, or acia *
+          ; Determine type of external comm device - none, or ACIA
 
                     clr       EXTDEV              ; default is none
-                    ldaa      HPRIO
+                    lda       HPRIO
                     anda      #$20
                     beq       BUFF2               ; jump if single chip mode
-                    ldaa      #$03                ; see if external acia exists
-                    staa      ACIA                ; master reset
-                    ldaa      ACIA
+                    lda       #$03                ; see if external acia exists
+                    sta       ACIA                ; master reset
+                    lda       ACIA
                     anda      #$7F                ; mask irq bit from status register
                     bne       BUFF1               ; jump if status reg not 0
-                    ldaa      #$12
-                    staa      ACIA                ; turn on acia
-                    ldaa      ACIA
+                    lda       #$12
+                    sta       ACIA                ; turn on acia
+                    lda       ACIA
                     anda      #$02
                     beq       BUFF1               ; jump if tdre not set
-                    ldaa      #$01
-                    staa      EXTDEV              ; external device is acia
+                    lda       #1
+                    sta       EXTDEV              ; external device is acia
                     bra       BUFF2
 
 BUFF1               equ       *                   ; see if duart exists
-                    ldaa      DUART+$0C           ; read IRQ vector register
+                    lda       DUART+$0C           ; read IRQ vector register
                     cmpa      #$0F                ; should be out of reset
                     bne       BUFF2
-                    ldaa      #$AA
-                    staa      DUART+$0C           ; write irq vector register
-                    ldaa      DUART+$0C           ; read irq vector register
+                    lda       #$AA
+                    sta       DUART+$0C           ; write irq vector register
+                    lda       DUART+$0C           ; read irq vector register
                     cmpa      #$AA
                     bne       BUFF2
-                    ldaa      #$02
-                    staa      EXTDEV              ; external device is duart A
+                    lda       #2
+                    sta       EXTDEV              ; external device is duart A
 
-; Find terminal port - SCI or external. *
+; Find terminal port - SCI or external.
 
 BUFF2               clr       IODEV
                     jsr       TARGCO              ; disconnect sci for evb board
-                    jsr       SIGNON              ; initialize sci
-                    ldaa      EXTDEV
+                    bsr       SIGNON              ; initialize sci
+                    lda       EXTDEV
                     beq       BUFF3               ; jump if no external device
-                    staa      IODEV
-                    jsr       SIGNON              ; initialize external device
+                    sta       IODEV
+                    bsr       SIGNON              ; initialize external device
 BUFF3               clr       IODEV
                     jsr       INPUT               ; get input from sci port
-                    cmpa      #$0D
+                    cmpa      #CR
                     beq       BUFF4               ; jump if cr - sci is terminal port
-                    ldaa      EXTDEV
+                    lda       EXTDEV
                     beq       BUFF3               ; jump if no external device
-                    staa      IODEV
+                    sta       IODEV
                     jsr       INPUT               ; get input from external device
-                    cmpa      #$0D
+                    cmpa      #CR
                     beq       BUFF4               ; jump if cr - terminal found ext
                     bra       BUFF3
 
@@ -270,17 +314,17 @@ SIGNON              jsr       INIT                ; initialize device
                     jsr       OUTSTRG
                     rts
 
-; Determine where host port should be. *
+; Determine where host port should be.
 
 BUFF4               clr       HOSTDEV             ; default - host = sci port
-                    ldaa      IODEV
-                    cmpa      #$01
+                    lda       IODEV
+                    cmpa      #1
                     beq       BUFF5               ; default host if term = acia
-                    ldaa      #$03
-                    staa      HOSTDEV             ; else host is duart port b
-BUFF5               equ       *
+                    lda       #3
+                    sta       HOSTDEV             ; else host is duart port b
+BUFF5
 
-;*****************
+;*******************************************************************************
 ;**  MAIN - This module reads the user's input into
 ;** a buffer called INBUFF.  The first field (assumed
 ;** to be the command field) is then parsed into a
@@ -298,66 +342,67 @@ BUFF5               equ       *
 ;** <cmd> = command string of 1-8 characters.
 ;** <arg> = Argument particular to the command.
 ;** <cr> = Carriage return signifying end of input string.
-;*****************
-; Prompt user
-; *do
-;   a=input();
-;   if(a==(cntlx or del)) continue;
-;   elseif(a==backspace)
-;      b--;
-;      if(b<0) b=0;
-;   else
-;      if(a==cr && buffer empty)
-;         repeat last command;
-;      else put a into buffer;
-;         check if buffer full;
-; *while(a != (cr or /)
-MAIN                sei                           ; block interrupts
+;*******************************************************************************
+;* Prompt user
+;*do
+;*   a=input();
+;*   if(a==(cntlx or del)) continue;
+;*   elseif(a==backspace)
+;*      b--;
+;*      if(b<0) b=0;
+;*   else
+;*      if(a==cr && buffer empty)
+;*         repeat last command;
+;*      else put a into buffer;
+;*         check if buffer full;
+;*while(a != (cr or /)
+
+MAIN                proc
+                    sei                           ; block interrupts
                     lds       #STACK              ; initialize sp every time
                     clr       AUTOLF
                     inc       AUTOLF              ; auto cr/lf = on
                     jsr       OUTCRLF
-                    ldaa      #PROMPT             ; prompt user
+                    lda       #PROMPT             ; prompt user
                     jsr       OUTPUT
                     clrb
-MAIN1               jsr       INCHAR              ; read terminal
+Loop@@              jsr       INCHAR              ; read terminal
                     ldx       #INBUFF
                     abx                           ; pointer into buffer
                     cmpa      #CTLX
                     beq       MAIN                ; jump if cntl X
                     cmpa      #DEL
                     beq       MAIN                ; jump if del
-                    cmpa      #$08
-                    bne       MAIN2               ; jump if not bckspc
+                    cmpa      #8
+                    bne       CR@@                ; jump if not bckspc
                     decb
                     blt       MAIN                ; jump if buffer empty
-                    bra       MAIN1
+                    bra       Loop@@
 
-MAIN2               cmpa      #$D
-                    bne       MAIN3               ; jump if not cr
+CR@@                cmpa      #CR
+                    bne       NotCR@@             ; jump if not cr
                     tstb
                     beq       COMM0               ; jump if buffer empty
-                    staa      ,X                  ; put a in buffer
+                    sta       ,X                  ; put a in buffer
                     bra       COMM0
 
-MAIN3               staa      ,X                  ; put a in buffer
+NotCR@@             sta       ,X                  ; put a in buffer
                     incb
                     cmpb      #BUFFLNG
-                    ble       MAIN4               ; jump if not long
+                    ble       NotLong@@           ; jump if not long
                     ldx       #MSG3               ; "long"
                     jsr       OUTSTRG
                     bra       MAIN
 
-MAIN4               cmpa      #'/'
-                    bne       MAIN1               ; jump if not "/"
-;        *******************
+NotLong@@           cmpa      #'/'
+                    bne       Loop@@              ; jump if not "/"
 
-;*****************
-;  Parse out and evaluate the command field.
-;*****************
-; *Initialize
+;*******************************************************************************
+;*  Parse out and evaluate the command field.
+;*******************************************************************************
+;*Initialize
 
-COMM0               equ       *
+COMM0               proc
                     clr       TMP1                ; Enable "/" command
                     clr       SHFTREG
                     clr       SHFTREG+1
@@ -366,208 +411,206 @@ COMM0               equ       *
                     stx       PTR0
                     jsr       WSKIP               ; find first char
 
-; *while((a=readbuff) != (cr or wspace))
-;     upcase(a);
-;     buffptr[b] = a
-;     b++
-;     if (b > 8) error(too long);
-;     if(a == "/")
-;          if(enabled) mslash();
-;          else error(command?);
-;     else hexbin(a);
+;*while((a=readbuff) != (cr or wspace))
+;*     upcase(a);
+;*     buffptr[b] = a
+;*     b++
+;*     if (b > 8) error(too long);
+;*     if(a == "/")
+;*          if(enabled) mslash();
+;*          else error(command?);
+;*     else hexbin(a);
 
-COMM1               equ       *
-                    jsr       READBUFF            ; read from buffer
+COMM1               jsr       READBUFF            ; read from buffer
                     ldx       #COMBUFF
                     abx
-                    jsr       UPCASE              ; convert to upper case
-                    staa      ,X                  ; put in command buffer
-                    cmpa      #$0D
+                    bsr       UPCASE              ; convert to upper case
+                    sta       ,X                  ; put in command buffer
+                    cmpa      #CR
                     beq       SRCH                ; jump if cr
                     jsr       WCHEK
                     beq       SRCH                ; jump if wspac
                     jsr       INCBUFF             ; move buffer pointer
                     incb
-                    cmpb      #$8
+                    cmpb      #8
                     ble       COMM2
                     ldx       #MSG3               ; "long"
                     jsr       OUTSTRG
-                    jmp       MAIN
+                    bra       MAIN
 
-COMM2               equ       *
-                    cmpa      #'/'
+COMM2               cmpa      #'/'
                     bne       COMM4               ; jump if not "/"
                     tst       TMP1
                     bne       COMM3               ; jump if not enabled
                     decb
-                    stab      COUNT
+                    stb       COUNT
                     ldx       #MSLASH
-                    jmp       EXEC                ; execute "/"
+                    bra       EXEC                ; execute "/"
 
 COMM3               ldx       #MSG8               ; "command?"
                     jsr       OUTSTRG
                     jmp       MAIN
 
-COMM4               equ       *
-                    jsr       HEXBIN
+COMM4               jsr       HEXBIN
                     bra       COMM1
 
-;*****************
-;   Search tables for command.  At this point,
-; COMBUFF holds the command field to be executed,
-; and B = # of characters in the command field.
-; The command table holds the whole command name
-; but only the first n characters of the command
-; must match what is in COMBUFF where n is the
-; number of characters entered by the user.
-;*****************
-; *count = b;
-; *ptr1 = comtabl;
-; *while(ptr1[0] != end of table)
-;   ptr1 = next entry
-;   for(b=1; b=count; b++)
-;      if(ptr1[b] == combuff[b]) continue;
-;      else error(not found);
-;   execute task;
-;  return();
-; *return(command not found);
+;*******************************************************************************
+;*   Search tables for command.  At this point,
+;* COMBUFF holds the command field to be executed,
+;* and B = # of characters in the command field.
+;* The command table holds the whole command name
+;* but only the first n characters of the command
+;* must match what is in COMBUFF where n is the
+;* number of characters entered by the user.
+;*******************************************************************************
+;*count = b;
+;*ptr1 = comtabl;
+;*while(ptr1[0] != end of table)
+;*   ptr1 = next entry
+;*   for(b=1; b=count; b++)
+;*      if(ptr1[b] == combuff[b]) continue;
+;*      else error(not found);
+;*   execute task;
+;*  return();
+;*return(command not found);
 
-SRCH                stab      COUNT               ; size of command entered
+SRCH                proc
+                    stb       COUNT               ; size of command entered
                     ldx       #COMTABL            ; pointer to table
                     stx       PTR1                ; pointer to next entry
-SRCH1               ldx       PTR1
+Again@@             ldx       PTR1
                     ldy       #COMBUFF            ; pointer to command buffer
-                    ldab      0,X
+                    ldb       ,x
                     cmpb      #$FF
-                    bne       SRCH2
+                    bne       Skip@@
                     ldx       #MSG2               ; "command not found"
                     jsr       OUTSTRG
                     jmp       MAIN
 
-SRCH2               pshx                          ; compute next table entry
-                    addb      #$3
+Skip@@              pshx                          ; compute next table entry
+                    addb      #3
                     abx
                     stx       PTR1
                     pulx
                     clrb
-SRCHLP              incb                          ; match characters loop
-                    ldaa      1,X                 ; read table
-                    cmpa      0,Y                 ; compare to combuff
-                    bne       SRCH1               ; try next entry
+Loop@@              incb                          ; match characters loop
+                    lda       1,X                 ; read table
+                    cmpa      ,y                  ; compare to combuff
+                    bne       Again@@             ; try next entry
                     inx                           ; move pointers
                     iny
                     cmpb      COUNT
-                    blt       SRCHLP              ; loop countu1 times
+                    blt       Loop@@              ; loop countu1 times
                     ldx       PTR1
-                    dex
-                    dex
-                    ldx       0,X                 ; jump address from table
-EXEC                jsr       0,X                 ; call task as subroutine
+                    dex:2
+                    ldx       ,x                  ; jump address from table
+EXEC                jsr       ,x                  ; call task as subroutine
                     jmp       MAIN
 
-;
+;*******************************************************************************
+;*   UTILITY SUBROUTINES - These routines
+;* are called by any of the task routines.
+;*******************************************************************************
+;*  UPCASE(a) - If the contents of A is alpha,
+;* returns a converted to uppercase.
+;*******************************************************************************
 
-;*****************
+UPCASE              proc
+                    cmpa      #'a'
+                    blo       Exit@@              ; jump if < a
 
-;   UTILITY SUBROUTINES - These routines
-
-; are called by any of the task routines.
-
-;*****************
-
-;*****************
-
-;  UPCASE(a) - If the contents of A is alpha,
-
-; returns a converted to uppercase.
-
-;*****************
-
-UPCASE              cmpa      #'a'
-                    blt       UPCASE1             ; jump if < a
                     cmpa      #'z'
-                    bgt       UPCASE1             ; jump if > z
-                    suba      #$20                ; convert
-UPCASE1             rts
+                    bhi       Exit@@              ; jump if > z
 
-;*****************
-;  BPCLR() - Clear all entries in the
-; table of breakpoints.
-;*****************
-BPCLR               ldx       #BRKTABL
-                    ldab      #8
-BPCLR1              clr       0,X
+                    adda      #'A'-'a'            ; convert
+
+Exit@@              rts
+
+;*******************************************************************************
+;* BPCLR() - Clear all entries in the table of breakpoints.
+;*******************************************************************************
+
+BPCLR               proc
+                    ldx       #BRKTABL
+                    ldb       #8
+Loop@@              clr       ,x
                     inx
                     decb
-                    bgt       BPCLR1              ; loop 8 times
+                    bgt       Loop@@              ; loop 8 times
                     rts
 
-;*****************
-;  RPRNT1(x) - Prints name and contents of a single
-; user register. On entry X points to name of register
-; in reglist.  On exit, a=register name.
-;*****************
+;*******************************************************************************
+;* RPRNT1(x) - Prints name and contents of a single
+;* user register. On entry X points to name of register
+;* in reglist.  On exit, a=register name.
+;*******************************************************************************
+
 REGLIST             fcc       'PYXABCS'           ; names
                     fcb       0,2,4,6,7,8,9       ; offset
                     fcb       1,1,1,0,0,0,1       ; size
-RPRNT1              ldaa      0,X
+
+RPRNT1              proc
+                    lda       ,x
                     psha
                     pshx
                     jsr       OUTPUT              ; name
-                    ldaa      #'-'
+                    lda       #'-'
                     jsr       OUTPUT              ; dash
-                    ldab      7,X                 ; contents offset
-                    ldaa      14,X                ; bytesize
-                    ldx       #REGS               ; address
+                    ldb       7,X                 ; contents offset
+                    lda       14,X                ; bytesize
+                    ldx       #REGISTERS          ; address
                     abx
                     tsta
-                    beq       RPRN2               ; jump if 1 byte
+                    beq       Skip@@              ; jump if 1 byte
                     jsr       OUT1BYT             ; 2 bytes
-RPRN2               jsr       OUT1BSP
+Skip@@              jsr       OUT1BSP
                     pulx
                     pula
                     rts
 
-;*****************
-;  RPRINT() - Print the name and contents
-; of all the user registers.
-;*****************
-RPRINT              pshx
+;*******************************************************************************
+;* RPRINT() - Print the name and contents of all the user registers.
+;*******************************************************************************
+
+RPRINT              proc
+                    pshx
                     ldx       #REGLIST
-RPRI1               jsr       RPRNT1              ; print name
+Loop@@              bsr       RPRNT1              ; print name
                     inx
                     cmpa      #'S'                ; s is last register
-                    bne       RPRI1               ; jump if not done
+                    bne       Loop@@              ; jump if not done
                     pulx
                     rts
 
-;*****************
-;   HEXBIN(a) - Convert the ASCII character in a
-; to binary and shift into shftreg.  Returns value
-; in tmp1 incremented if a is not hex.
-;*****************
-HEXBIN              psha
+;*******************************************************************************
+;* HEXBIN(a) - Convert the ASCII character in a
+;* to binary and shift into shftreg.  Returns value
+;* in tmp1 incremented if a is not hex.
+;*******************************************************************************
+
+HEXBIN              proc
+                    psha
                     pshb
                     pshx
-                    jsr       UPCASE              ; convert to upper case
+                    bsr       UPCASE              ; convert to upper case
                     cmpa      #'0'
                     blt       HEXNOT              ; jump if a < $30
                     cmpa      #'9'
-                    ble       HEXNMB              ; jump if 0-9
+                    ble       Number@@            ; jump if 0-9
                     cmpa      #'A'
                     blt       HEXNOT              ; jump if $39> a <$41
                     cmpa      #'F'
                     bgt       HEXNOT              ; jump if a > $46
-                    adda      #$9                 ; convert $A-$F
-HEXNMB              anda      #$0F                ; convert to binary
+                    adda      #9                  ; convert $A-$F
+Number@@            anda      #$0F                ; convert to binary
                     ldx       #SHFTREG
-                    ldab      #4
-HEXSHFT             asl       1,X                 ; 2 byte shift through
-                    rol       0,X                 ; carry bit
+                    ldb       #4
+Loop@@              asl       1,X                 ; 2 byte shift through
+                    rol       ,x                  ; carry bit
                     decb
-                    bgt       HEXSHFT             ; shift 4 times
-                    oraa      1,X
-                    staa      1,X
+                    bgt       Loop@@              ; shift 4 times
+                    ora       1,X
+                    sta       1,X
                     bra       HEXRTS
 
 HEXNOT              inc       TMP1                ; indicate not hex
@@ -576,888 +619,820 @@ HEXRTS              pulx
                     pula
                     rts
 
-;*****************
-;  BUFFARG() - Build a hex argument from the
-; contents of the input buffer. Characters are
-; converted to binary and shifted into shftreg
-; until a non-hex character is found.  On exit
-; shftreg holds the last four digits read, count
-; holds the number of digits read, ptrbuff points
-; to the first non-hex character read, and A holds
-; that first non-hex character.
-;*****************
-; *Initialize
-; *while((a=readbuff()) not hex)
-;     hexbin(a);
-; *return();
+;*******************************************************************************
+;*  BUFFARG() - Build a hex argument from the
+;* contents of the input buffer. Characters are
+;* converted to binary and shifted into shftreg
+;* until a non-hex character is found.  On exit
+;* shftreg holds the last four digits read, count
+;* holds the number of digits read, ptrbuff points
+;* to the first non-hex character read, and A holds
+;* that first non-hex character.
+;*******************************************************************************
+;*Initialize
+;*while((a=readbuff()) not hex)
+;*     hexbin(a);
+;*return();
 
-BUFFARG             clr       TMP1                ; not hex indicator
+BUFFARG             proc
+                    clr       TMP1                ; not hex indicator
                     clr       COUNT               ; # or digits
                     clr       SHFTREG
                     clr       SHFTREG+1
                     jsr       WSKIP
-BUFFLP              jsr       READBUFF            ; read char
-                    jsr       HEXBIN
+Loop@@              jsr       READBUFF            ; read char
+                    bsr       HEXBIN
                     tst       TMP1
-                    bne       BUFFRTS             ; jump if not hex
+                    bne       :AnRTS              ; jump if not hex
                     inc       COUNT
                     jsr       INCBUFF             ; move buffer pointer
-                    bra       BUFFLP
+                    bra       Loop@@
 
-BUFFRTS             rts
+;*******************************************************************************
+;*  TERMARG() - Build a hex argument from the
+;* terminal.  Characters are converted to binary
+;* and shifted into shftreg until a non-hex character
+;* is found.  On exit shftreg holds the last four
+;* digits read, count holds the number of digits
+;* read, and A holds the first non-hex character.
+;*******************************************************************************
+;*initialize
+;*while((a=inchar()) == hex)
+;*     if(a = cntlx or del)
+;*          abort;
+;*     else
+;*          hexbin(a); countu1++;
+;*return();
 
-;*****************
-;  TERMARG() - Build a hex argument from the
-; terminal.  Characters are converted to binary
-; and shifted into shftreg until a non-hex character
-; is found.  On exit shftreg holds the last four
-; digits read, count holds the number of digits
-; read, and A holds the first non-hex character.
-;*****************
-; *initialize
-; *while((a=inchar()) == hex)
-;     if(a = cntlx or del)
-;          abort;
-;     else
-;          hexbin(a); countu1++;
-; *return();
-
-TERMARG             clr       COUNT
+TERMARG             proc
+                    clr       COUNT
                     clr       SHFTREG
                     clr       SHFTREG+1
-TERM0               jsr       INCHAR
+Loop@@              jsr       INCHAR
                     cmpa      #CTLX
-                    beq       TERM1               ; jump if controlx
+                    beq       CtrlX@@             ; jump if controlx
                     cmpa      #DEL
-                    bne       TERM2               ; jump if not delete
-TERM1               jmp       MAIN                ; abort
+                    bne       Normal@@            ; jump if not delete
+CtrlX@@             jmp       MAIN                ; abort
 
-TERM2               clr       TMP1                ; hex indicator
-                    jsr       HEXBIN
+Normal@@            clr       TMP1                ; hex indicator
+                    bsr       HEXBIN
                     tst       TMP1
-                    bne       TERM3               ; jump if not hex
+                    bne       :AnRTS              ; jump if not hex
                     inc       COUNT
-                    bra       TERM0
+                    bra       Loop@@
 
-TERM3               rts
+;*******************************************************************************
+;* CHGBYT() - If shftreg is not empty, put
+;* contents of shftreg at address in X.  If X
+;* is an address in EEPROM then program it.
+;*******************************************************************************
+;*if(count != 0)
+;*   (x) = a;
 
-;*****************
-;   CHGBYT() - If shftreg is not empty, put
-; contents of shftreg at address in X.  If X
-; is an address in EEPROM then program it.
-;*****************
-; *if(count != 0)
-;   (x) = a;
-CHGBYT              tst       COUNT
-                    beq       CHGBYT4             ; quit if shftreg empty
-                    ldaa      SHFTREG+1           ; get data into a
-                    jsr       WRITE
-CHGBYT4             rts
+CHGBYT              proc
+                    tst       COUNT
+                    beq       :AnRTS              ; quit if shftreg empty
+                    lda       SHFTREG+1           ; get data into a
+                    bsr       WRITE
+                    rts
 
+;*******************************************************************************
+;* WRITE() - This routine is used to write the
+;* contents of A to the address of X.  If the
+;* address is in EEPROM, it will be programmed
+;* and if it is already programmed, it will be
+;* byte erased first.
+;*******************************************************************************
+;*if(X == config) then
+;*   byte erase config;
+;*if(X is eeprom)then
+;*   if(not erased) then erase;
+;*   program (x) = A;
+;*write (x) = A;
+;*if((x) != A) error(rom);
 
-;*****************
-; WRITE() - This routine is used to write the
-; *contents of A to the address of X.  If the
-; *address is in EEPROM, it will be programmed
-; *and if it is already programmed, it will be
-; *byte erased first.
-;******************
-; *if(X == config) then
-;   byte erase config;
-; *if(X is eeprom)then
-;   if(not erased) then erase;
-;   program (x) = A;
-; *write (x) = A;
-; *if((x) != A) error(rom);
-WRITE               equ       *
+WRITE               proc
                     cpx       #CONFIG
-                    beq       WRITE0              ; jump if config
+                    beq       Config@@            ; jump if config
                     cpx       STREE               ; start of EE
-                    blo       WRITE2              ; jump if not EE
+                    blo       NotEE@@             ; jump if not EE
                     cpx       ENDEE               ; end of EE
-                    bhi       WRITE2              ; jump if not EE
-WRITEE              pshb                          ; check if byte erased
-                    ldab      0,X
+                    bhi       NotEE@@             ; jump if not EE
+                    pshb                          ; check if byte erased
+                    ldb       ,x
                     cmpb      #$FF
                     pulb
-                    beq       WRITE1              ; jump if erased
-WRITE0              jsr       EEBYTE              ; byte erase
-WRITE1              jsr       EEWRIT              ; byte program
-WRITE2              staa      0,X                 ; write for non EE
-                    cmpa      0,X
-                    beq       WRITE3              ; jump if write ok
+                    beq       Skip@@              ; jump if erased
+Config@@            bsr       EEBYTE              ; byte erase
+Skip@@              bsr       EEWRIT              ; byte program
+NotEE@@             sta       ,x                  ; write for non EE
+                    cmpa      ,x
+                    beq       :AnRTS              ; jump if write ok
                     pshx
                     ldx       #MSG6               ; "rom"
                     jsr       OUTSTRG
                     pulx
-WRITE3              rts
+                    rts
 
+;*******************************************************************************
+;* EEWRIT(), EEBYTE(), EEBULK() -
+;* These routines are used to program and EEPROM
+;* locations.  eewrite programs the address in X with
+;* the value in A, eebyte does a byte address at X,
+;* and eebulk does a bulk of EEPROM.  Whether eebulk
+;* erases the config or not depends on the address it
+;* receives in X.
+;*******************************************************************************
 
-;*****************
-;   EEWRIT(), EEBYTE(), EEBULK() -
-; These routines are used to program and eeprom
-; *locations.  eewrite programs the address in X with
-; *the value in A, eebyte does a byte address at X,
-; *and eebulk does a bulk of eeprom.  Whether eebulk
-; *erases the config or not depends on the address it
-; *receives in X.
-;****************
-EEWRIT              equ       *                   ; program one byte at x
-                    pshb
-                    ldab      #$02
-                    stab      PPROG
-                    staa      0,X
-                    ldab      #$03
+EEWRIT              proc
+                    pshb                          ; program one byte at x
+                    ldb       #$02
+                    stb       PPROG
+                    sta       ,x
+                    incb
                     bra       EEPROG
 
-;***
-
-EEBYTE              equ       *                   ; byte erase address x
-                    pshb
-                    ldab      #$16
-                    stab      PPROG
-                    ldab      #$FF
-                    stab      0,X
-                    ldab      #$17
+EEBYTE              proc
+                    pshb                          ; byte erase address x
+                    ldb       #$16
+                    stb       PPROG
+                    ldb       #$FF
+                    stb       ,x
+                    ldb       #$17
                     bra       EEPROG
 
-;***
-
-EEBULK              equ       *                   ; bulk erase eeprom
-                    pshb
-                    ldab      #$06
-                    stab      PPROG
-                    staa      0,X                 ; erase config or not ...
-                    ldab      #$07                ; ... depends on X addr
+EEBULK              proc
+                    pshb                          ; bulk erase eeprom
+                    ldb       #$06
+                    stb       PPROG
+                    sta       ,x                  ; erase config or not ...
+                    incb                          ; ... depends on X addr
 EEPROG              bne       ACL1
                     clrb                          ; fail safe
-ACL1                stab      PPROG
+ACL1                stb       PPROG
                     pulb
-;***
-DLY10MS             equ       *                   ; delay 10ms at E = 2MHz
-                    pshx
-                    ldx       #$0D06
-DLYLP               dex
-                    bne       DLYLP
+
+;*******************************************************************************
+
+DLY10MS             proc
+                    pshx                          ; delay 10ms at E = 2MHz
+                    ldx       #3334
+Loop@@              dex
+                    bne       Loop@@
                     pulx
                     clr       PPROG
                     rts
 
+;*******************************************************************************
+;* READBUFF() -  Read the character in INBUFF
+;* pointed at by ptrbuff into A.  Returns ptrbuff unchanged.
+;*******************************************************************************
 
-;*****************
-;  READBUFF() -  Read the character in INBUFF
-; pointed at by ptrbuff into A.  Returns ptrbuff
-; unchanged.
-;*****************
-READBUFF            pshx
+READBUFF            proc
+                    pshx
                     ldx       PTR0
-                    ldaa      0,X
+                    lda       ,x
                     pulx
                     rts
 
-;*****************
-;  INCBUFF(), DECBUFF() - Increment or decrement
-; ptrbuff.
-;*****************
-INCBUFF             pshx
+;*******************************************************************************
+;* INCBUFF(), DECBUFF() - Increment or decrement ptrbuff.
+;*******************************************************************************
+
+INCBUFF             proc
+                    pshx
                     ldx       PTR0
                     inx
                     bra       INCDEC
 
-DECBUFF             pshx
+DECBUFF             proc
+                    pshx
                     ldx       PTR0
                     dex
+
 INCDEC              stx       PTR0
                     pulx
                     rts
 
-;*****************
-;  WSKIP() - Read from the INBUFF until a
-; non whitespace (space, comma, tab) character
-; is found.  Returns ptrbuff pointing to the
-; first non-whitespace character and a holds
-; that character.  WSKIP also compares a to
-; $0D (CR) and cond codes indicating the
-; results of that compare.
-;*****************
-WSKIP               jsr       READBUFF            ; read character
-                    jsr       WCHEK
-                    bne       WSKIP1              ; jump if not wspc
-                    jsr       INCBUFF             ; move pointer
+;*******************************************************************************
+;* WSKIP() - Read from the INBUFF until a
+;* non whitespace (space, comma, tab) character
+;* is found.  Returns ptrbuff pointing to the
+;* first non-whitespace character and a holds
+;* that character.  WSKIP also compares a to
+;* CR and cond codes indicating the
+;* results of that compare.
+;*******************************************************************************
+
+WSKIP               proc
+                    bsr       READBUFF            ; read character
+                    bsr       WCHEK
+                    bne       Exit@@              ; jump if not wspc
+                    bsr       INCBUFF             ; move pointer
                     bra       WSKIP               ; loop
 
-WSKIP1              cmpa      #$0D
+Exit@@              cmpa      #CR
                     rts
 
-;*****************
-;  WCHEK(a) - Returns z=1 if a holds a
-; whitespace character, else z=0.
-;*****************
-WCHEK               cmpa      #$2C                ; comma
-                    beq       WCHEK1
-                    cmpa      #$20                ; space
-                    beq       WCHEK1
-                    cmpa      #$09                ; tab
-WCHEK1              rts
+;*******************************************************************************
+;*  WCHEK(a) - Returns z=1 if a holds a
+;* whitespace character, else z=0.
+;*******************************************************************************
 
-;*****************
-;   DCHEK(a) - Returns Z=1 if a = whitespace
-; or carriage return.  Else returns z=0.
-;*****************
-DCHEK               jsr       WCHEK
-                    beq       DCHEK1              ; jump if whitespace
-                    cmpa      #$0D
-DCHEK1              rts
+WCHEK               proc
+                    cmpa      #','                ; comma
+                    beq       :AnRTS
 
-;*****************
-;  CHKABRT() - Checks for a control x or delete
-; from the terminal.  If found, the stack is
-; reset and the control is transferred to main.
-; Note that this is an abnormal termination.
-;   If the input from the terminal is a control W
-; then this routine keeps waiting until any other
-; character is read.
-;*****************
-; *a=input();
-; *if(a=cntl w) wait until any other key;
-; *if(a = cntl x or del) abort;
+                    cmpa      #' '                ; space
+                    beq       :AnRTS
 
-CHKABRT             jsr       INPUT
-                    beq       CHK4                ; jump if no input
+                    cmpa      #9                  ; tab
+                    rts
+
+;*******************************************************************************
+;* DCHEK(a) - Returns Z=1 if a = whitespace
+;* or carriage return.  Else returns z=0.
+;*******************************************************************************
+
+DCHEK               proc
+                    bsr       WCHEK
+                    beq       :AnRTS              ; jump if whitespace
+                    cmpa      #CR
+                    rts
+
+;*******************************************************************************
+;*  CHKABRT() - Checks for a control x or delete
+;* from the terminal.  If found, the stack is
+;* reset and the control is transferred to main.
+;* Note that this is an abnormal termination.
+;*   If the input from the terminal is a control W
+;* then this routine keeps waiting until any other
+;* character is read.
+;*******************************************************************************
+;*a=input();
+;*if(a=cntl w) wait until any other key;
+;*if(a = cntl x or del) abort;
+
+CHKABRT             proc
+                    bsr       INPUT
+                    beq       :AnRTS              ; jump if no input
                     cmpa      #CTLW
                     bne       CHK2                ; jump in not cntlw
-CHKABRT1            jsr       INPUT
+CHKABRT1            bsr       INPUT
                     beq       CHKABRT1            ; jump if no input
 CHK2                cmpa      #DEL
                     beq       CHK3                ; jump if delete
                     cmpa      #CTLX
                     beq       CHK3                ; jump if control x
                     cmpa      #CTLA
-                    bne       CHK4                ; jump not control a
+                    bne       :AnRTS              ; jump not control a
 CHK3                jmp       MAIN                ; abort
 
-CHK4                rts                           ; return
+;*******************************************************************************
+;*  HOSTCO - connect sci to host for evb board.
+;*  TARGCO - connect sci to target for evb board.
+;*******************************************************************************
 
-;***********************
-;  HOSTCO - connect sci to host for evb board.
-;  TARGCO - connect sci to target for evb board.
-;***********************
-HOSTCO              psha
-                    ldaa      #$01
-                    staa      DFLOP               ; send 1 to d-flop
+HOSTCO              proc
+                    psha
+                    lda       #1
+                    sta       DFLOP               ; send 1 to d-flop
                     pula
                     rts
 
-TARGCO              psha
-                    ldaa      #$00
-                    staa      DFLOP               ; send 0 to d-flop
-                    pula
-                    rts
+TARGCO              clr       DFLOP               ; send 0 to d-flop
+                    rts                           ; return
 
-;
-;**********
-;
-;     VECINIT - This routine checks for
-;        vectors in the RAM table.  All
-;        uninitialized vectors are programmed
-;        to JMP STOPIT
-;
-;**********
-;
-VECINIT             ldx       #JSCI               ; Point to First RAM Vector
+;*******************************************************************************
+;*     VECINIT - This routine checks for
+;*        vectors in the RAM table.  All
+;*        uninitialized vectors are programmed
+;*        to JMP STOPIT
+;*******************************************************************************
+
+VECINIT             proc
+                    ldx       #JSCI               ; Point to First RAM Vector
                     ldy       #STOPIT             ; Pointer to STOPIT routine
-                    ldd       #$7E03              ; A=JMP opcode; B=offset
-VECLOOP             cmpa      0,X
-                    beq       VECNEXT             ; If vector already in
-                    staa      0,X                 ; install JMP
+                    ldd       #JMP<8|3            ; A=JMP opcode; B=offset
+Loop@@              cmpa      ,x
+                    beq       Skip@@              ; If vector already in
+                    sta       ,x                  ; install JMP
                     sty       1,X                 ; to STOPIT routine
-VECNEXT             abx                           ; Add 3 to point at next vector
+Skip@@              abx                           ; Add 3 to point at next vector
                     cpx       #JCLM+3             ; Done?
-                    bne       VECLOOP             ; If not, continue loop
+                    bne       Loop@@              ; If not, continue loop
                     rts
 
-;
-
-STOPIT              ldaa      #$50                ; Stop-enable; IRQ, XIRQ-Off
+STOPIT              proc
+                    lda       #$50                ; Stop-enable; IRQ, XIRQ-Off
                     tap
                     stop                          ; You are lost! Shut down
-                    jmp       STOPIT              ; In case continue by XIRQ
+                    bra       STOPIT              ; In case continue by XIRQ
 
-;**********
-;
-;   I/O MODULE
-;     Communications with the outside world.
-; 3 I/O routines (INIT, INPUT, and OUTPUT) call
-; drivers specified by IODEV (0=SCI, 1=ACIA,
-; 2=DUARTA, 3=DUARTB).
-;
-;**********
-;   INIT() - Initialize device specified by iodev.
-;*********
-;
-INIT                equ       *
+;*******************************************************************************
+;*   I/O MODULE
+;*     Communications with the outside world.
+;* 3 I/O routines (INIT, INPUT, and OUTPUT) call
+;* drivers specified by IODEV (0=SCI, 1=ACIA,
+;* 2=DUARTA, 3=DUARTB).
+;*******************************************************************************
+;*   INIT() - Initialize device specified by iodev.
+;*******************************************************************************
+
+INIT                proc
                     psha                          ; save registers
                     pshx
-                    ldaa      IODEV
-                    cmpa      #$00
+                    lda       IODEV
                     bne       INIT1               ; jump not sci
                     jsr       ONSCI               ; initialize sci
-                    bra       INIT4
+                    bra       Exit@@
 
-INIT1               cmpa      #$01
+INIT1               cmpa      #1
                     bne       INIT2               ; jump not acia
                     jsr       ONACIA              ; initialize acia
-                    bra       INIT4
+                    bra       Exit@@
 
-INIT2               ldx       #PORTA
-                    cmpa      #$02
+INIT2               ldx       #DPORTA
+                    cmpa      #2
                     beq       INIT3               ; jump duart a
-                    ldx       #PORTB
-INIT3               jsr       ONUART              ; initialize duart
-INIT4               pulx                          ; restore registers
+                    ldx       #DPORTB
+INIT3               bsr       ONUART              ; initialize duart
+Exit@@              pulx                          ; restore registers
                     pula
                     rts
 
-;**********
-;  INPUT() - Read device. Returns a=char or 0.
-;    This routine also disarms the cop.
-;**********
-INPUT               equ       *
+;*******************************************************************************
+;*  INPUT() - Read device. Returns a=char or 0.
+;*    This routine also disarms the cop.
+;*******************************************************************************
+
+INPUT               proc
                     pshx
-                    ldaa      #$55                ; reset cop
-                    staa      COPRST
-                    ldaa      #$AA
-                    staa      COPRST
-                    ldaa      IODEV
+                    lda       #$55                ; reset cop
+                    sta       COPRST
+                    coma
+                    sta       COPRST
+                    lda       IODEV
                     bne       INPUT1              ; jump not sci
                     jsr       INSCI               ; read sci
-                    bra       INPUT4
+                    bra       Exit@@
 
-INPUT1              cmpa      #$01
+INPUT1              cmpa      #1
                     bne       INPUT2              ; jump not acia
                     jsr       INACIA              ; read acia
-                    bra       INPUT4
+                    bra       Exit@@
 
-INPUT2              ldx       #PORTA
-                    cmpa      #$02
+INPUT2              ldx       #DPORTA
+                    cmpa      #2
                     beq       INPUT3              ; jump if duart a
-                    ldx       #PORTB
-INPUT3              jsr       INUART              ; read uart
-INPUT4              pulx
+                    ldx       #DPORTB
+INPUT3              bsr       INUART              ; read uart
+Exit@@              pulx
                     rts
 
-;**********
-;   OUTPUT() - Output character in A.
-; chrcnt indicates the current column on the
-; *output display.  It is incremented every time
-; *a character is outputted, and cleared whenever
-; *the subroutine outcrlf is called.
-;**********
+;*******************************************************************************
+;* OUTPUT() - Output character in A.
+;* chrcnt indicates the current column on the
+;* output display.  It is incremented every time
+;* a character is outputted, and cleared whenever
+;* the subroutine outcrlf is called.
+;*******************************************************************************
 
-OUTPUT              equ       *
-                    psha                          ; save registers
-                    pshb
+OUTPUT              proc
+                    pshd                          ; save registers
                     pshx
-                    ldab      IODEV
-                    bne       OUTPUT1             ; jump not sci
+                    ldb       IODEV
+                    bne       ?OUTPUT1            ; jump not sci
                     jsr       OUTSCI              ; write sci
-                    bra       OUTPUT4
+                    bra       Exit@@
 
-OUTPUT1             cmpb      #$01
-                    bne       OUTPUT2             ; jump not acia
+?OUTPUT1            cmpb      #1
+                    bne       ?OUTPUT2            ; jump not acia
                     jsr       OUTACIA             ; write acia
-                    bra       OUTPUT4
+                    bra       Exit@@
 
-OUTPUT2             ldx       #PORTA
-                    cmpb      #$02
-                    beq       OUTPUT3             ; jump if duart a
-                    ldx       #PORTB
-OUTPUT3             jsr       OUTUART             ; write uart
-OUTPUT4             pulx
-                    pulb
-                    pula
+?OUTPUT2            ldx       #DPORTA
+                    cmpb      #2
+                    beq       ?OUTPUT3            ; jump if duart a
+                    ldx       #DPORTB
+?OUTPUT3            bsr       OUTUART             ; write uart
+Exit@@              pulx
+                    puld
                     inc       CHRCNT              ; increment column count
                     rts
 
-;**********
-;   ONUART(port) - Initialize a duart port.
-; Sets duart to internal clock, divide by 16,
-; 8 data + 1 stop bits.
-;**********
+;*******************************************************************************
+;* ONUART(port) - Initialize a duart port.
+;* Sets duart to internal clock, divide by 16,
+;* 8 data + 1 stop bits.
+;*******************************************************************************
 
-ONUART              ldaa      #$22
-                    staa      2,X                 ; reset receiver
-                    ldaa      #$38
-                    staa      2,X                 ; reset transmitter
-                    ldaa      #$40
-                    staa      2,X                 ; reset error status
-                    ldaa      #$10
-                    staa      2,X                 ; reset pointer
-                    ldaa      #$00
-                    staa      DUART+4             ; clock source
-                    ldaa      #$00
-                    staa      DUART+5             ; interrupt mask
-                    ldaa      #$13
-                    staa      0,X                 ; 8 data, no parity
-                    ldaa      #$07
-                    staa      0,X                 ; 1 stop bits
-                    ldaa      #$BB                ; baud rate (9600)
-                    staa      1,X                 ; tx and rcv baud rate
-                    ldaa      #$05
-                    staa      2,X                 ; enable tx and rcv
+ONUART              proc
+                    lda       #$22
+                    sta       2,X                 ; reset receiver
+                    lda       #$38
+                    sta       2,X                 ; reset transmitter
+                    lda       #$40
+                    sta       2,X                 ; reset error status
+                    lda       #$10
+                    sta       2,X                 ; reset pointer
+                    clra
+                    sta       DUART+4             ; clock source
+                    sta       DUART+5             ; interrupt mask
+                    lda       #$13
+                    sta       ,x                  ; 8 data, no parity
+                    lda       #7
+                    sta       ,x                  ; 1 stop bits
+                    lda       #$BB                ; baud rate (9600)
+                    sta       1,X                 ; tx and rcv baud rate
+                    lda       #5
+                    sta       2,X                 ; enable tx and rcv
                     rts
 
-;**********
-;   INUART(port) - Check duart for any input.
-;**********
-INUART              ldaa      1,X                 ; read status
-                    anda      #$01                ; check rxrdy
-                    beq       INUART1             ; jump if no data
-                    ldaa      3,X                 ; read data
+;*******************************************************************************
+;*   INUART(port) - Check duart for any input.
+;*******************************************************************************
+
+INUART              proc
+                    lda       1,X                 ; read status
+                    anda      #1                  ; check rxrdy
+                    beq       :AnRTS              ; jump if no data
+                    lda       3,X                 ; read data
                     anda      #$7F                ; mask parity
-INUART1             rts
-
-;**********
-;   OUTUART(port) - Output the character in a.
-;        if autolf=1, transmits cr or lf as crlf.
-;**********
-OUTUART             tst       AUTOLF
-                    beq       OUTUART2            ; jump if no autolf
-                    bsr       OUTUART2
-                    cmpa      #$0D
-                    bne       OUTUART1
-                    ldaa      #$0A                ; if cr, output lf
-                    bra       OUTUART2
-
-OUTUART1            cmpa      #$0A
-                    bne       OUTUART3
-                    ldaa      #$0D                ; if lf, output cr
-OUTUART2            ldab      1,X                 ; check status
-                    andb      #$4
-                    beq       OUTUART2            ; loop until tdre=1
-                    anda      #$7F                ; mask parity
-                    staa      3,X                 ; send character
-OUTUART3            rts
-
-;**********
-;   ONSCI() - Initialize the SCI for 9600
-;                 baud at 8 MHz Extal.
-;**********
-ONSCI               ldaa      #$30
-                    staa      BAUD                ; baud register
-                    ldaa      #$00
-                    staa      SCCR1
-                    ldaa      #$0C
-                    staa      SCCR2               ; enable
                     rts
 
-;**********
-;   INSCI() - Read from SCI.  Return a=char or 0.
-;**********
-INSCI               ldaa      SCSR                ; read status reg
+;*******************************************************************************
+;*   OUTUART(port) - Output the character in a.
+;*        if autolf=1, transmits cr or lf as crlf.
+;*******************************************************************************
+
+OUTUART             proc
+                    tst       AUTOLF
+                    beq       Loop@@              ; jump if no autolf
+                    bsr       Loop@@
+                    cmpa      #CR
+                    bne       Skip@@
+                    lda       #LF                 ; if cr, output lf
+                    bra       Loop@@
+
+Skip@@              cmpa      #LF
+                    bne       :AnRTS
+
+                    lda       #CR                 ; if lf, output cr
+Loop@@              ldb       1,X                 ; check status
+                    andb      #$04
+                    beq       Loop@@              ; loop until tdre=1
+                    anda      #$7F                ; mask parity
+                    sta       3,X                 ; send character
+                    rts
+
+;*******************************************************************************
+;*   ONSCI() - Initialize the SCI for 9600
+;*                 baud at 8 MHz Extal.
+;*******************************************************************************
+
+ONSCI               proc
+                    lda       #$30
+                    sta       BAUD                ; baud register
+                    clr       SCCR1
+                    lda       #$0C
+                    sta       SCCR2               ; enable
+                    rts
+
+;*******************************************************************************
+;*   INSCI() - Read from SCI.  Return a=char or 0.
+;*******************************************************************************
+
+INSCI               proc
+                    lda       SCSR                ; read status reg
                     anda      #$20                ; check rdrf
-                    beq       INSCI1              ; jump if no data
-                    ldaa      SCDAT               ; read data
+                    beq       :AnRTS              ; jump if no data
+                    lda       SCDR                ; read data
                     anda      #$7F                ; mask parity
-INSCI1              rts
+                    rts
 
-;**********
-;  OUTSCI() - Output A to sci. IF autolf = 1,
-;               cr and lf sent as crlf.
-;**********
-OUTSCI              tst       AUTOLF
+;*******************************************************************************
+;*  OUTSCI() - Output A to sci. IF autolf = 1,
+;*               cr and lf sent as crlf.
+;*******************************************************************************
+
+OUTSCI              proc
+                    tst       AUTOLF
                     beq       OUTSCI2             ; jump if autolf=0
                     bsr       OUTSCI2
-                    cmpa      #$0D
+                    cmpa      #CR
                     bne       OUTSCI1
-                    ldaa      #$0A                ; if cr, send lf
+                    lda       #LF                 ; if cr, send lf
                     bra       OUTSCI2
 
-OUTSCI1             cmpa      #$0A
-                    bne       OUTSCI3
-                    ldaa      #$0D                ; if lf, send cr
-OUTSCI2             ldab      SCSR                ; read status
+OUTSCI1             cmpa      #LF
+                    bne       :AnRTS
+
+                    lda       #CR                 ; if lf, send cr
+OUTSCI2             ldb       SCSR                ; read status
                     bitb      #$80
                     beq       OUTSCI2             ; loop until tdre=1
                     anda      #$7F                ; mask parity
-                    staa      SCDAT               ; send character
-OUTSCI3             rts
-
-;**********
-;   ONACIA - Initialize the ACIA for
-; 8 data bits, 1 stop bit, divide by 64 clock.
-;**********
-ONACIA              ldx       #ACIA
-                    ldaa      #$03
-                    staa      0,X                 ; master reset
-                    ldaa      #$16
-                    staa      0,X                 ; setup
+                    sta       SCDR                ; send character
                     rts
 
-;**********
-;   INACIA - Read from the ACIA, Return a=char or 0.
-; Tmp3 is used to flag overrun or framing error.
-;**********
-INACIA              ldx       #ACIA
-                    ldaa      0,X                 ; read status register
+;*******************************************************************************
+;*   ONACIA - Initialize the ACIA for
+;* 8 data bits, 1 stop bit, divide by 64 clock.
+;*******************************************************************************
+
+ONACIA              proc
+                    ldx       #ACIA
+                    lda       #$03
+                    sta       ,X                  ; master reset
+                    lda       #$16
+                    sta       ,X                  ; setup
+                    rts
+
+;*******************************************************************************
+;* INACIA - Read from the ACIA, Return a=char or 0.
+;* Tmp3 is used to flag overrun or framing error.
+;*******************************************************************************
+
+INACIA              proc
+                    ldx       #ACIA
+                    lda       ,x                  ; read status register
                     psha
                     anda      #$30                ; check ov, fe
                     pula
                     beq       INACIA1             ; jump - no error
-                    ldaa      #$01
-                    staa      TMP3                ; flag reciever error
+                    lda       #1
+                    sta       TMP3                ; flag reciever error
                     bra       INACIA2             ; read data to clear status
 
 INACIA1             anda      #$01                ; check rdrf
-                    beq       INACIA3             ; jump if no data
-INACIA2             ldaa      1,X                 ; read data
+                    beq       :AnRTS              ; jump if no data
+INACIA2             lda       1,X                 ; read data
                     anda      #$7F                ; mask parity
-INACIA3             rts
+                    rts
 
-;**********
-;  OUTACIA - Output A to acia. IF autolf = 1,
-;               cr or lf sent as crlf.
-;**********
-OUTACIA             bsr       OUTACIA3            ; output char
+;*******************************************************************************
+;*  OUTACIA - Output A to acia. IF autolf = 1,
+;*               cr or lf sent as crlf.
+;*******************************************************************************
+
+OUTACIA             proc
+                    bsr       OUTACIA3            ; output char
                     tst       AUTOLF
-                    beq       OUTACIA2            ; jump no autolf
-                    cmpa      #$0D
+                    beq       :AnRTS              ; jump no autolf
+                    cmpa      #CR
                     bne       OUTACIA1
-                    ldaa      #$0A
-                    bsr       OUTACIA3            ; if cr, output lf
-                    bra       OUTACIA2
+                    lda       #LF
+                    bra       OUTACIA3            ; if cr, output lf
 
-OUTACIA1            cmpa      #$0A
-                    bne       OUTACIA2
-                    ldaa      #$0D
-                    bsr       OUTACIA3            ; if lf, output cr
-OUTACIA2            rts
+OUTACIA1            cmpa      #LF
+                    bne       :AnRTS
+                    lda       #CR                 ; if lf, output cr
 
 OUTACIA3            ldx       #ACIA
-                    ldab      0,X
+                    ldb       ,x
                     bitb      #$2
                     beq       OUTACIA3            ; loop until tdre
                     anda      #$7F                ; mask parity
-                    staa      1,X                 ; output
+                    sta       1,X                 ; output
                     rts
 
-;
-
-;        Space for modifying OUTACIA routine
-
-;
-
-                    fdb       $FFFF,$FFFF,$FFFF,$FFFF
-;*******************************
+;*******************************************************************************
 ;*** I/O UTILITY SUBROUTINES ***
-;***These subroutines perform the neccesary
-; data I/O operations.
-; OUTLHLF-Convert left 4 bits of A from binary
-;            to ASCII and output.
-; OUTRHLF-Convert right 4 bits of A from binary
-;            to ASCII and output.
-; OUT1BYT-Convert byte addresed by X from binary
-;           to ASCII and output.
-; OUT1BSP-Convert byte addressed by X from binary
-;           to ASCII and output followed by a space.
-; OUT2BSP-Convert 2 bytes addressed by X from binary
-;            to ASCII and  output followed by a space.
-; OUTSPAC-Output a space.
-;
-; OUTCRLF-Output a line feed and carriage return.
-;
-; OUTSTRG-Output the string of ASCII bytes addressed
-;            by X until $04.
-; OUTA-Output the ASCII character in A.
-;
-; TABTO-Output spaces until column 20 is reached.
-;
-; INCHAR-Input to A and echo one character.  Loops
-;            until character read.
-;        *******************
+;***These subroutines perform the neccesary data I/O operations.
+;* OUTLHLF-Convert left 4 bits of A from binary to ASCII and output.
+;* OUTRHLF-Convert right 4 bits of A from binary to ASCII and output.
+;* OUT1BYT-Convert byte addresed by X from binary to ASCII and output.
+;* OUT1BSP-Convert byte addressed by X from binary to ASCII and output followed by a space.
+;* OUT2BSP-Convert 2 bytes addressed by X from binary to ASCII and  output followed by a space.
+;* OUTSPAC-Output a space.
+;* OUTCRLF-Output a line feed and carriage return.
+;* OUTSTRG-Output the string of ASCII bytes addressed by X until EOT.
+;* OUTA-Output the ASCII character in A.
+;* TABTO-Output spaces until column 20 is reached.
+;* INCHAR-Input to A and echo one character.  Loops until character read.
+;*******************************************************************************
 
-;**********
-;  OUTRHLF(), OUTLHLF(), OUTA()
-; *Convert A from binary to ASCII and output.
-; *Contents of A are destroyed..
-;**********
-OUTLHLF             lsra                          ; shift data to right
-                    lsra
-                    lsra
-                    lsra
-OUTRHLF             anda      #$0F                ; mask top half
-                    adda      #$30                ; convert to ascii
-                    cmpa      #$39
-                    ble       OUTA                ; jump if 0-9
-                    adda      #$07                ; convert to hex A-F
-OUTA                jsr       OUTPUT              ; output character
-                    rts
+;*******************************************************************************
+;* OUTRHLF(), OUTLHLF(), OUTA()
+;* Convert A from binary to ASCII and output.
+;* Contents of A are destroyed.
+;*******************************************************************************
 
-;**********
-;  OUT1BYT(x) - Convert the byte at X to two
-; ASCII characters and output. Return X pointing
-; to next byte.
-;**********
-OUT1BYT             psha
-                    ldaa      0,X                 ; get data in a
-                    psha                          ; save copy
+OUTLHLF             proc
+                    lsra:4                        ; shift data to right
+
+OUTRHLF             proc
+                    anda      #$0F                ; mask top half
+                    adda      #$90                ; convert to ascii
+                    daa
+                    adca      #$40
+                    daa
+
+OUTA                proc
+                    jmp       OUTPUT              ; output character
+;                   rts
+
+;*******************************************************************************
+;* OUT1BYT(x) - Convert the byte at X to two
+;* ASCII characters and output. Return X pointing to next byte.
+;*******************************************************************************
+
+OUT1BYT             proc
+                    psha
+                    lda       ,x                  ; get data in a
                     bsr       OUTLHLF             ; output left half
-                    pula                          ; retrieve copy
+                    lda       ,x                  ; get data in a
                     bsr       OUTRHLF             ; output right half
                     pula
                     inx
                     rts
 
-;**********
-;  OUT1BSP(x), OUT2BSP(x) - Output 1 or 2 bytes
-; at x followed by a space.  Returns x pointing to
-; next byte.
-;**********
-OUT2BSP             jsr       OUT1BYT             ; do first byte
-OUT1BSP             jsr       OUT1BYT             ; do next byte
-OUTSPAC             ldaa      #$20                ; output a space
+;*******************************************************************************
+;* OUT1BSP(x), OUT2BSP(x) - Output 1 or 2 bytes
+;* at x followed by a space.  Returns x pointing to next byte.
+;*******************************************************************************
+
+OUT2BSP             proc
+                    bsr       OUT1BYT             ; do first byte
+
+OUT1BSP             proc
+                    bsr       OUT1BYT             ; do next byte
+
+OUTSPAC             proc
+                    lda       #' '                ; output a space
                     jsr       OUTPUT
                     rts
 
-;**********
-;  OUTCRLF() - Output a Carriage return and
-; a line feed.  Returns a = cr.
-;**********
-OUTCRLF             ldaa      #$0D                ; cr
+;*******************************************************************************
+;* OUTCRLF() - Output a Carriage return and a line feed.  Returns a = cr.
+;*******************************************************************************
+
+OUTCRLF             proc
+                    lda       #CR                 ; cr
                     jsr       OUTPUT              ; output a
-                    ldaa      #$00
+                    clra
                     jsr       OUTPUT              ; output padding
-                    ldaa      #$0D
+                    lda       #CR
                     clr       CHRCNT              ; zero the column counter
                     rts
 
-;**********
-;  OUTSTRG(x) - Output string of ASCII bytes
-; starting at x until end of text ($04).  Can
-; be paused by control w (any char restarts).
-;**********
-OUTSTRG             jsr       OUTCRLF
-OUTSTRG0            psha
-OUTSTRG1            ldaa      0,X                 ; read char into a
+;*******************************************************************************
+;* OUTSTRG(x) - Output string of ASCII bytes
+;* starting at x until end of text (EOT).  Can
+;* be paused by control w (any char restarts).
+;*******************************************************************************
+
+OUTSTRG             proc
+                    bsr       OUTCRLF
+
+OUTSTRG0            proc
+                    psha
+Loop@@              lda       ,x                  ; read char into a
                     cmpa      #EOT
-                    beq       OUTSTRG3            ; jump if eot
+                    beq       Exit@@              ; jump if eot
                     jsr       OUTPUT              ; output character
                     inx
                     jsr       INPUT
-                    beq       OUTSTRG1            ; jump if no input
+                    beq       Loop@@              ; jump if no input
                     cmpa      #CTLW
-                    bne       OUTSTRG1            ; jump if not cntlw
-OUTSTRG2            jsr       INPUT
-                    beq       OUTSTRG2            ; jump if any input
-                    bra       OUTSTRG1
+                    bne       Loop@@              ; jump if not cntlw
+WaitForInput@@      jsr       INPUT
+                    beq       WaitForInput@@      ; jump if any input
+                    bra       Loop@@
 
-OUTSTRG3            pula
+Exit@@              pula
                     rts
 
+;*******************************************************************************
+;* TABTO() - move cursor over to column 20.
+;* while(chrcnt < 16) outspac.
 
-;*********
-;  TABTO() - move cursor over to column 20.
-; *while(chrcnt < 16) outspac.
-TABTO               equ       *
+TABTO               proc
                     psha
-TABTOLP             jsr       OUTSPAC
-                    ldaa      CHRCNT
+Loop@@              bsr       OUTSPAC
+                    lda       CHRCNT
                     cmpa      #20
-                    ble       TABTOLP
+                    ble       Loop@@
                     pula
                     rts
 
-;**********
-;  INCHAR() - Reads input until character sent.
-;    Echoes char and returns with a = char.
-INCHAR              jsr       INPUT
+;*******************************************************************************
+;*  INCHAR() - Reads input until character sent.
+;*    Echoes char and returns with a = char.
+
+INCHAR              proc
+                    jsr       INPUT
                     tsta
                     beq       INCHAR              ; jump if no input
                     jsr       OUTPUT              ; echo
                     rts
 
-;*********************
+;*******************************************************************************
 ;*** COMMAND TABLE ***
-COMTABL             equ       *
-                    fcb       5
-                    fcc       'ASSEM'
-                    fdb       ASSEM
-                    fcb       5
-                    fcc       'BREAK'
-                    fdb       BREAK
-                    fcb       4
-                    fcc       'BULK'
-                    fdb       BULK
-                    fcb       7
-                    fcc       'BULKALL'
-                    fdb       BULKALL
-                    fcb       4
-                    fcc       'CALL'
-                    fdb       CALL
-                    fcb       4
-                    fcc       'DUMP'
-                    fdb       DUMP
-                    fcb       5
-                    fcc       'EEMOD'
-                    fdb       EEMOD
-                    fcb       4
-                    fcc       'FILL'
-                    fdb       FILL
-                    fcb       2
-                    fcc       'GO'
-                    fdb       GO
-                    fcb       4
-                    fcc       'HELP'
-                    fdb       HELP
-                    fcb       4
-                    fcc       'HOST'
-                    fdb       HOST
-                    fcb       4
-                    fcc       'LOAD'
-                    fdb       LOAD
-                    fcb       6                   ; LENGTH OF COMMAND
-                    fcc       'MEMORY'            ; ASCII COMMAND
-                    fdb       MEMORY              ; COMMAND ADDRESS
-                    fcb       4
-                    fcc       'MOVE'
-                    fdb       MOVE
-                    fcb       6
-                    fcc       'OFFSET'
-                    fdb       OFFSET
-                    fcb       7
-                    fcc       'PROCEED'
-                    fdb       PROCEED
-                    fcb       8
-                    fcc       'REGISTER'
-                    fdb       REGISTER
-                    fcb       6
-                    fcc       'STOPAT'
-                    fdb       STOPAT
-                    fcb       5
-                    fcc       'TRACE'
-                    fdb       TRACE
-                    fcb       6
-                    fcc       'VERIFY'
-                    fdb       VERIFY
-                    fcb       1
-                    fcc       '?'                 ; initial command
-                    fdb       HELP
-                    fcb       5
-                    fcc       'XBOOT'
-                    fdb       BOOT
-                    fcb       1                   ; dummy command for load
-                    fcc       '~'
-                    fdb       TILDE
-;
-;*** Command names for evm compatability ***
-;
-                    fcb       3
-                    fcc       'ASM'
-                    fdb       ASSEM
-                    fcb       2
-                    fcc       'BF'
-                    fdb       FILL
-                    fcb       4
-                    fcc       'COPY'
-                    fdb       MOVE
-                    fcb       5
-                    fcc       'ERASE'
-                    fdb       BULK
-                    fcb       2
-                    fcc       'MD'
-                    fdb       DUMP
-                    fcb       2
-                    fcc       'MM'
-                    fdb       MEMORY
-                    fcb       2
-                    fcc       'RD'
-                    fdb       REGISTER
-                    fcb       2
-                    fcc       'RM'
-                    fdb       REGISTER
-                    fcb       4
-                    fcc       'READ'
-                    fdb       MOVE
-                    fcb       2
-                    fcc       'TM'
-                    fdb       HOST
-                    fcb       4
-                    fcc       'TEST'
-                    fdb       EVBTEST
+
+COMTABL             @cmd      'ASSEM'
+                    @cmd      'BREAK'
+                    @cmd      'BULK'
+                    @cmd      'BULKALL'
+                    @cmd      'CALL'
+                    @cmd      'DUMP'
+                    @cmd      'EEMOD'
+                    @cmd      'FILL'
+                    @cmd      'GO'
+                    @cmd      'HELP'
+                    @cmd      'HOST'
+                    @cmd      'LOAD'
+                    @cmd      'MEMORY'
+                    @cmd      'MOVE'
+                    @cmd      'OFFSET'
+                    @cmd      'PROCEED'
+                    @cmd      'REGISTER'
+                    @cmd      'STOPAT'
+                    @cmd      'TRACE'
+                    @cmd      'VERIFY'
+                    @cmd      '?',HELP            ; initial command
+                    @cmd      'XBOOT',BOOT
+                    @cmd      '~',TILDE           ; dummy command for load
+
+          ;*** Command names for EVM compatability ***
+
+                    @cmd      'ASM',ASSEM
+                    @cmd      'BF',FILL
+                    @cmd      'COPY',MOVE
+                    @cmd      'ERASE',BULK
+                    @cmd      'MD',DUMP
+                    @cmd      'MM',MEMORY
+                    @cmd      'RD',REGISTER
+                    @cmd      'RM',REGISTER
+                    @cmd      'READ',MOVE
+                    @cmd      'TM',HOST
+                    @cmd      'TEST',EVBTEST
+
                     fcb       $FF
 
-;*******************
+;*******************************************************************************
 ;*** TEXT TABLES ***
 
-MSG1                fcc       'BUFFALO 3.4 (ext) - Bit User Fast Friendly Aid to Logical Operation'
-                    fcb       EOT
-MSG2                fcc       'What?'
-                    fcb       EOT
-MSG3                fcc       'Too Long'
-                    fcb       EOT
-MSG4                fcc       'Full'
-                    fcb       EOT
-MSG5                fcc       'Op- '
-                    fcb       EOT
-MSG6                fcc       'rom-'
-                    fcb       EOT
-MSG8                fcc       'Command?'
-                    fcb       EOT
-MSG9                fcc       'Bad argument'
-                    fcb       EOT
-MSG10               fcc       'No host port'
-                    fcb       EOT
-MSG11               fcc       'done'
-                    fcb       EOT
-MSG12               fcc       'chksum error'
-                    fcb       EOT
-MSG13               fcc       'error addr '
-                    fcb       EOT
-MSG14               fcc       'rcvr error'
-                    fcb       EOT
+MSG1                fcc       'BUFFALO 3.4 (ext) - Bit User Fast Friendly Aid to Logical Operation',EOT
+MSG2                fcc       'What?',EOT
+MSG3                fcc       'Too Long',EOT
+MSG4                fcc       'Full',EOT
+MSG5                fcc       'Op- ',EOT
+MSG6                fcc       'rom-',EOT
+MSG8                fcc       'Command?',EOT
+MSG9                fcc       'Bad argument',EOT
+MSG10               fcc       'No host port',EOT
+MSG11               fcc       'done',EOT
+MSG12               fcc       'chksum error',EOT
+MSG13               fcc       'error addr ',EOT
+MSG14               fcc       'rcvr error',EOT
 
-;**********
-;   break [-][<addr>] . . .
-; Modifies the breakpoint table.  More than
-; one argument can be entered on the command
-; line but the table will hold only 4 entries.
-; 4 types of arguments are implied above:
-; break           Prints table contents.
-; break <addr>    Inserts <addr>.
-; break -<addr>   Deletes <addr>.
-; break -         Clears all entries.
-;**********
-; while 1
-;     a = wskip();
-;     switch(a)
-;          case(cr):
-;               bprint(); return;
+;*******************************************************************************
+;*   break [-][<addr>] . . .
+;* Modifies the breakpoint table.  More than
+;* one argument can be entered on the command
+;* line but the table will hold only 4 entries.
+;* 4 types of arguments are implied above:
+;* break           Prints table contents.
+;* break <addr>    Inserts <addr>.
+;* break -<addr>   Deletes <addr>.
+;* break -         Clears all entries.
+;*******************************************************************************
+;* while 1
+;*     a = wskip();
+;*     switch(a)
+;*          case(cr):
+;*               bprint(); return;
 
-BREAK               jsr       WSKIP
+BREAK               proc
+                    jsr       WSKIP
                     bne       BRKDEL              ; jump if not cr
                     jsr       BPRINT              ; print table
                     rts
 
-;          case("-"):
-;               incbuff(); readbuff();
-;               if(dchek(a))          /* look for wspac or cr */
-;                    bpclr();
-;                    breaksw;
-;               a = buffarg();
-;               if( !dchek(a) ) return(bad argument);
-;               b = bpsrch();
-;               if(b >= 0)
-;                    brktabl[b] = 0;
-;               breaksw;
+;*          case("-"):
+;*               incbuff(); readbuff();
+;*               if(dchek(a))          /* look for wspac or cr */
+;*                    bpclr();
+;*                    breaksw;
+;*               a = buffarg();
+;*               if( !dchek(a) ) return(bad argument);
+;*               b = bpsrch();
+;*               if(b >= 0)
+;*                    brktabl[b] = 0;
+;*               breaksw;
 
-BRKDEL              cmpa      #'-'
+BRKDEL              proc
+                    cmpa      #'-'
                     bne       BRKDEF              ; jump if not -
                     jsr       INCBUFF
                     jsr       READBUFF
                     jsr       DCHEK
                     bne       BRKDEL1             ; jump if not delimeter
                     jsr       BPCLR               ; clear table
-                    jmp       BREAK               ; do next argument
+                    bra       BREAK               ; do next argument
 
 BRKDEL1             jsr       BUFFARG             ; get address to delete
                     jsr       DCHEK
@@ -1466,47 +1441,48 @@ BRKDEL1             jsr       BUFFARG             ; get address to delete
                     jsr       OUTSTRG
                     rts
 
-BRKDEL2             jsr       BPSRCH              ; look for addr in table
+BRKDEL2             bsr       BPSRCH              ; look for addr in table
                     tstb
                     bmi       BRKDEL3             ; jump if not found
                     ldx       #BRKTABL
                     abx
-                    clr       0,X                 ; clear entry
+                    clr       ,x                  ; clear entry
                     clr       1,X
-BRKDEL3             jmp       BREAK               ; do next argument
+BRKDEL3             bra       BREAK               ; do next argument
 
-;          default:
-;               a = buffarg();
-;               if( !dchek(a) ) return(bad argument);
-;               b = bpsrch();
-;               if(b < 0)            /* not already in table */
-;                    x = shftreg;
-;                    shftreg = 0;
-;                    a = x[0]; x[0] = $3F
-;                    b = x[0]; x[0] = a;
-;                    if(b != $3F) return(rom);
-;                    b = bpsrch();   /* look for hole */
-;                    if(b >= 0) return(table full);
-;                    brktabl[b] = x;
-;               breaksw;
+;*          default:
+;*               a = buffarg();
+;*               if( !dchek(a) ) return(bad argument);
+;*               b = bpsrch();
+;*               if(b < 0)            /* not already in table */
+;*                    x = shftreg;
+;*                    shftreg = 0;
+;*                    a = x[0]; x[0] = $3F
+;*                    b = x[0]; x[0] = a;
+;*                    if(b != $3F) return(rom);
+;*                    b = bpsrch();   /* look for hole */
+;*                    if(b >= 0) return(table full);
+;*                    brktabl[b] = x;
+;*               breaksw;
 
-BRKDEF              jsr       BUFFARG             ; get argument
+BRKDEF              proc
+                    jsr       BUFFARG             ; get argument
                     jsr       DCHEK
                     beq       BRKDEF1             ; jump if delimiter
                     ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-BRKDEF1             jsr       BPSRCH              ; look for entry in table
+BRKDEF1             bsr       BPSRCH              ; look for entry in table
                     tstb
                     bge       BREAK               ; jump if already in table
 
                     ldx       SHFTREG             ; x = new entry addr
-                    ldaa      0,X                 ; save original contents
+                    lda       ,x                  ; save original contents
                     psha
-                    ldaa      #SWI
+                    lda       #SWI
                     jsr       WRITE               ; write to entry addr
-                    ldab      0,X                 ; read back
+                    ldb       ,x                  ; read back
                     pula
                     jsr       WRITE               ; restore original
                     cmpb      #SWI
@@ -1514,136 +1490,137 @@ BRKDEF1             jsr       BPSRCH              ; look for entry in table
                     stx       PTR1                ; save address
                     ldx       #PTR1
                     jsr       OUT2BSP             ; print address
-                    jsr       BPRINT
+                    bsr       BPRINT
                     rts
 
 BRKDEF2             clr       SHFTREG
                     clr       SHFTREG+1
                     pshx
-                    jsr       BPSRCH              ; look for 0 entry
+                    bsr       BPSRCH              ; look for 0 entry
                     pulx
                     tstb
                     bpl       BRKDEF3             ; jump if table not full
                     ldx       #MSG4               ; "full"
                     jsr       OUTSTRG
-                    jsr       BPRINT
+                    bsr       BPRINT
                     rts
 
 BRKDEF3             ldy       #BRKTABL
                     aby
-                    stx       0,Y                 ; put new entry in
+                    stx       ,y                  ; put new entry in
                     jmp       BREAK               ; do next argument
 
-;**********
-;   bprint() - print the contents of the table.
-;**********
-BPRINT              jsr       OUTCRLF
+;*******************************************************************************
+;*   bprint() - print the contents of the table.
+;*******************************************************************************
+
+BPRINT              proc
+                    jsr       OUTCRLF
                     ldx       #BRKTABL
-                    ldab      #4
-BPRINT1             jsr       OUT2BSP
+                    ldb       #4
+Loop@@              jsr       OUT2BSP
                     decb
-                    bgt       BPRINT1             ; loop 4 times
+                    bgt       Loop@@              ; loop 4 times
                     rts
 
-;**********
-;   bpsrch() - search table for address in
-; shftreg. Returns b = index to entry or
-; b = -1 if not found.
-;**********
-; *for(b=0; b=6; b=+2)
-;     x[] = brktabl + b;
-;     if(x[0] = shftreg)
-;          return(b);
-; *return(-1);
+;*******************************************************************************
+;*   bpsrch() - search table for address in
+;* shftreg. Returns b = index to entry or
+;* b = -1 if not found.
+;*******************************************************************************
+;*for(b=0; b=6; b=+2)
+;*     x[] = brktabl + b;
+;*     if(x[0] = shftreg)
+;*          return(b);
+;*return(-1);
 
-BPSRCH              clrb
-BPSRCH1             ldx       #BRKTABL
+BPSRCH              proc
+                    clrb
+Loop@@              ldx       #BRKTABL
                     abx
-                    ldx       0,X                 ; get table entry
+                    ldx       ,x                  ; get table entry
                     cpx       SHFTREG
-                    bne       BPSRCH2             ; jump if no match
+                    beq       :AnRTS              ; exit if match
+
+                    incb:2
+                    cmpb      #6
+                    ble       Loop@@              ; loop 4 times
+                    ldb       #$FF
                     rts
 
-BPSRCH2             incb
-                    incb
-                    cmpb      #$6
-                    ble       BPSRCH1             ; loop 4 times
-                    ldab      #$FF
-                    rts
+;*******************************************************************************
+;* bulk  - Bulk erase the eeprom not config.
+;* bulkall - Bulk erase eeprom and config.
+;*******************************************************************************
 
-
-;**********
-;  bulk  - Bulk erase the eeprom not config.
-; bulkall - Bulk erase eeprom and config.
-;*********
-BULK                equ       *
+BULK                proc
                     ldx       STREE
                     bra       BULK1
 
-BULKALL             ldx       #CONFIG
-BULK1               ldaa      #$FF
+BULKALL             proc
+                    ldx       #CONFIG
+BULK1               lda       #$FF
                     jsr       EEBULK
                     rts
 
+;*******************************************************************************
+;*  dump [<addr1> [<addr2>]]  - Dump memory
+;* in 16 byte lines from <addr1> to <addr2>.
+;*   Default starting address is "current
+;* location" and default number of lines is 8.
+;*******************************************************************************
+;*ptr1 = ptrmem;        /* default start address */
+;*ptr2 = ptr1 + $80;    /* default end address */
+;*a = wskip();
+;*if(a != cr)
+;*     a = buffarg();
+;*     if(countu1 = 0) return(bad argument);
+;*     if( !dchek(a) ) return(bad argument);
+;*     ptr1 = shftreg;
+;*     ptr2 = ptr1 + $80;  /* default end address */
+;*     a = wskip();
+;*     if(a != cr)
+;*          a = buffarg();
+;*          if(countu1 = 0) return(bad argument);
+;*          a = wskip();
+;*          if(a != cr) return(bad argument);
+;*          ptr2 = shftreg;
 
-
-;**********
-;  dump [<addr1> [<addr2>]]  - Dump memory
-; in 16 byte lines from <addr1> to <addr2>.
-;   Default starting address is "current
-; location" and default number of lines is 8.
-;**********
-; *ptr1 = ptrmem;        /* default start address */
-; *ptr2 = ptr1 + $80;    /* default end address */
-; *a = wskip();
-; *if(a != cr)
-;     a = buffarg();
-;     if(countu1 = 0) return(bad argument);
-;     if( !dchek(a) ) return(bad argument);
-;     ptr1 = shftreg;
-;     ptr2 = ptr1 + $80;  /* default end address */
-;     a = wskip();
-;     if(a != cr)
-;          a = buffarg();
-;          if(countu1 = 0) return(bad argument);
-;          a = wskip();
-;          if(a != cr) return(bad argument);
-;          ptr2 = shftreg;
-
-DUMP                ldx       PTRMEM              ; current location
+DUMP                proc
+                    ldx       PTRMEM              ; current location
                     stx       PTR1                ; default start
-                    ldab      #$80
+                    ldb       #$80
                     abx
                     stx       PTR2                ; default end
                     jsr       WSKIP
                     beq       DUMP1               ; jump - no arguments
                     jsr       BUFFARG             ; read argument
                     tst       COUNT
-                    beq       DUMPERR             ; jump if no argument
+                    beq       Fail@@              ; jump if no argument
                     jsr       DCHEK
-                    bne       DUMPERR             ; jump if delimiter
+                    bne       Fail@@              ; jump if delimiter
                     ldx       SHFTREG
                     stx       PTR1
-                    ldab      #$80
+                    ldb       #$80
                     abx
                     stx       PTR2                ; default end address
                     jsr       WSKIP
                     beq       DUMP1               ; jump - 1 argument
                     jsr       BUFFARG             ; read argument
                     tst       COUNT
-                    beq       DUMPERR             ; jump if no argument
+                    beq       Fail@@              ; jump if no argument
                     jsr       WSKIP
-                    bne       DUMPERR             ; jump if not cr
+                    bne       Fail@@              ; jump if not cr
                     ldx       SHFTREG
                     stx       PTR2
                     bra       DUMP1               ; jump - 2 arguments
 
-DUMPERR             ldx       #MSG9               ; "bad argument"
+Fail@@              ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-; *ptrmem = ptr1;
-; *ptr1 = ptr1 & $fff0;
+;*ptrmem = ptr1;
+;*ptr1 = ptr1 & $fff0;
 
 DUMP1               ldd       PTR1
                     std       PTRMEM              ; new current location
@@ -1651,78 +1628,77 @@ DUMP1               ldd       PTR1
                     std       PTR1                ; start dump at 16 byte boundary
 
 ;*** dump loop starts here ***
-; *do:
-;     output address of first byte;
+;*do:
+;*     output address of first byte;
 
-DUMPLP              jsr       OUTCRLF
+Loop@@              jsr       OUTCRLF
                     ldx       #PTR1
                     jsr       OUT2BSP             ; first address
 
-;     x = ptr1;
-;     for(b=0; b=16; b++)
-;          output contents;
+;*     x = ptr1;
+;*     for(b=0; b=16; b++)
+;*          output contents;
 
                     ldx       PTR1                ; base address
                     clrb                          ; loop counter
-DUMPDAT             jsr       OUT1BSP             ; hex value loop
+Dump@@              jsr       OUT1BSP             ; hex value loop
                     incb
                     cmpb      #$10
-                    blt       DUMPDAT             ; loop 16 times
+                    blt       Dump@@              ; loop 16 times
 
-;     x = ptr1;
-;     for(b=0; b=16; b++)
-;          a = x[b];
-;          if($7A < a < $20)  a = $20;
-;          output ascii contents;
+;*     x = ptr1;
+;*     for(b=0; b=16; b++)
+;*          a = x[b];
+;*          if($7A < a < $20)  a = $20;
+;*          output ascii contents;
 
                     clrb                          ; loop counter
 DUMPASC             ldx       PTR1                ; base address
                     abx
-                    ldaa      ,X                  ; ascii value loop
-                    cmpa      #$20
+                    lda       ,X                  ; ascii value loop
+                    cmpa      #' '
                     blo       DUMP3               ; jump if non printable
                     cmpa      #$7A
                     bls       DUMP4               ; jump if printable
-DUMP3               ldaa      #$20                ; space for non printables
+DUMP3               lda       #' '                ; space for non printables
 DUMP4               jsr       OUTPUT              ; output ascii value
                     incb
                     cmpb      #$10
                     blt       DUMPASC             ; loop 16 times
 
-;     chkabrt();
-;     ptr1 = ptr1 + $10;
-; *while(ptr1 <= ptr2);
-; *return;
+;*     chkabrt();
+;*     ptr1 = ptr1 + $10;
+;*while(ptr1 <= ptr2);
+;*return;
 
                     jsr       CHKABRT             ; check abort or wait
                     ldd       PTR1
                     addd      #$10                ; point to next 16 byte bound
                     std       PTR1                ; update ptr1
                     cpd       PTR2
-                    bhi       DUMP5               ; quit if ptr1 > ptr2
-                    cpd       #$00                ; check wraparound at $ffff
-                    bne       DUMPLP              ; jump - no wraparound
+                    bhi       :AnRTS              ; quit if ptr1 > ptr2
+                    cpd       #0                  ; check wraparound at $ffff
+                    bne       Loop@@              ; jump - no wraparound
                     ldd       PTR2
                     cpd       #$FFF0
-                    blo       DUMPLP              ; upper bound not at top
-DUMP5               rts                           ; quit
+                    blo       Loop@@              ; upper bound not at top
+                    rts                           ; quit
 
+;*******************************************************************************
+;*   eemod [<addr1> [<addr2>]]
+;* Modifies the eeprom address range.
+;*  EEMOD                 -show ee address range
+;*  EEMOD <addr1>         -set range to addr1 -> addr1+2k
+;*  EEMOD <addr1> <addr2> -set range to addr1 -> addr2
+;*******************************************************************************
+;*if(<addr1>)
+;*    stree = addr1;
+;*    endee = addr1 + 2k bytes;
+;*if(<addr2>)
+;*    endee = addr2;
+;*print(stree,endee);
 
-
-;**********
-;   eemod [<addr1> [<addr2>]]
-; Modifies the eeprom address range.
-;  EEMOD                 -show ee address range
-;  EEMOD <addr1>         -set range to addr1 -> addr1+2k
-;  EEMOD <addr1> <addr2> -set range to addr1 -> addr2
-;**********
-; *if(<addr1>)
-;    stree = addr1;
-;    endee = addr1 + 2k bytes;
-; *if(<addr2>)
-;    endee = addr2;
-; *print(stree,endee);
-EEMOD               equ       *
+EEMOD               proc
                     jsr       WSKIP
                     beq       EEMOD2              ; jump - no arguments
                     jsr       BUFFARG             ; read argument
@@ -1758,101 +1734,95 @@ EEMODER             ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
+;*******************************************************************************
+;*  fill <addr1> <addr2> [<data>]  - Block fill
+;*memory from addr1 to addr2 with data.  Data
+;*defaults to $FF.
+;*******************************************************************************
+;*get addr1 and addr2
 
-
-
-;**********
-;  fill <addr1> <addr2> [<data>]  - Block fill
-; *memory from addr1 to addr2 with data.  Data
-; *defaults to $FF.
-;**********
-; *get addr1 and addr2
-FILL                equ       *
+FILL                proc
                     jsr       WSKIP
                     jsr       BUFFARG
                     tst       COUNT
-                    beq       FILLERR             ; jump if no argument
+                    beq       Fail@@              ; jump if no argument
                     jsr       WCHEK
-                    bne       FILLERR             ; jump if bad argument
+                    bne       Fail@@              ; jump if bad argument
                     ldx       SHFTREG
                     stx       PTR1                ; address1
                     jsr       WSKIP
                     jsr       BUFFARG
                     tst       COUNT
-                    beq       FILLERR             ; jump if no argument
+                    beq       Fail@@              ; jump if no argument
                     jsr       DCHEK
-                    bne       FILLERR             ; jump if bad argument
+                    bne       Fail@@              ; jump if bad argument
                     ldx       SHFTREG
                     stx       PTR2                ; address2
 
-; *Get data if it exists
-                    ldaa      #$FF
-                    staa      TMP2                ; default data
+          ;Get data if it exists
+
+                    lda       #$FF
+                    sta       TMP2                ; default data
                     jsr       WSKIP
                     beq       FILL1               ; jump if default data
                     jsr       BUFFARG
                     tst       COUNT
-                    beq       FILLERR             ; jump if no argument
+                    beq       Fail@@              ; jump if no argument
                     jsr       WSKIP
-                    bne       FILLERR             ; jump if bad argument
-                    ldaa      SHFTREG+1
-                    staa      TMP2
+                    bne       Fail@@              ; jump if bad argument
+                    lda       SHFTREG+1
+                    sta       TMP2
 
-; *while(ptr1 <= ptr2)
-;   *ptr1 = data
-;   if(*ptr1 != data) abort
+;*while(ptr1 <= ptr2)
+;*   *ptr1 = data
+;*   if(*ptr1 != data) abort
 
-FILL1               equ       *
-                    jsr       CHKABRT             ; check for abort
+FILL1               jsr       CHKABRT             ; check for abort
                     ldx       PTR1                ; starting address
-                    ldaa      TMP2                ; data
+                    lda       TMP2                ; data
                     jsr       WRITE               ; write the data to x
-                    cmpa      0,X
+                    cmpa      ,x
                     bne       FILLBAD             ; jump if no write
                     cpx       PTR2
-                    beq       FILL2               ; quit yet?
+                    beq       :AnRTS              ; quit yet?
                     inx
                     stx       PTR1
                     bra       FILL1               ; loop
 
-FILL2               rts
-
-FILLERR             ldx       #MSG9               ; "bad argument"
+Fail@@              ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-FILLBAD             equ       *
-                    ldx       #PTR1               ; output bad address
+FILLBAD             ldx       #PTR1               ; output bad address
                     jsr       OUT2BSP
                     rts
 
+;*******************************************************************************
+;*   MEMORY [<addr>]
+;*   [<addr>]/
+;* Opens memory and allows user to modify the
+;*contents at <addr> or the last opened location.
+;*    Subcommands:
+;* [<data>]<cr>       - Close current location and exit.
+;* [<data>]<lf><+>    - Close current and open next.
+;* [<data>]<^><-><bs> - Close current and open previous.
+;* [<data>]<sp>       - Close current and open next.
+;* [<data>]</><=>     - Reopen current location.
+;*     The contents of the current location is only
+;*  changed if valid data is entered before each
+;*  subcommand.
+;* [<addr>]O - Compute relative offset from current
+;*     location to <addr>.  The current location must
+;*     be the address of the offset byte.
+;*******************************************************************************
+;*a = wskip();
+;*if(a != cr)
+;*     a = buffarg();
+;*     if(a != cr) return(bad argument);
+;*     if(countu1 != 0) ptrmem[] = shftreg;
 
-
-;*******************************************
-;   MEMORY [<addr>]
-;   [<addr>]/
-; Opens memory and allows user to modify the
-; *contents at <addr> or the last opened location.
-;    Subcommands:
-; [<data>]<cr>       - Close current location and exit.
-; [<data>]<lf><+>    - Close current and open next.
-; [<data>]<^><-><bs> - Close current and open previous.
-; [<data>]<sp>       - Close current and open next.
-; [<data>]</><=>     - Reopen current location.
-;     The contents of the current location is only
-;  changed if valid data is entered before each
-;  subcommand.
-; [<addr>]O - Compute relative offset from current
-;     location to <addr>.  The current location must
-;     be the address of the offset byte.
-;**********
-; *a = wskip();
-; *if(a != cr)
-;     a = buffarg();
-;     if(a != cr) return(bad argument);
-;     if(countu1 != 0) ptrmem[] = shftreg;
-
-MEMORY              jsr       WSKIP
+MEMORY              proc
+                    jsr       WSKIP
                     beq       MEM1                ; jump if cr
                     jsr       BUFFARG
                     jsr       WSKIP
@@ -1866,12 +1836,12 @@ MSLASH              tst       COUNT
                     ldx       SHFTREG
                     stx       PTRMEM              ; update "current location"
 
-;**********
-; Subcommands
-;**********
-; *outcrlf();
-; *out2bsp(ptrmem[]);
-; *out1bsp(ptrmem[0]);
+;*******************************************************************************
+;* Subcommands
+;*******************************************************************************
+;*outcrlf();
+;*out2bsp(ptrmem[]);
+;*out1bsp(ptrmem[0]);
 
 MEM1                jsr       OUTCRLF
 MEM2                ldx       #PTRMEM
@@ -1880,93 +1850,103 @@ MEM3                ldx       PTRMEM
                     jsr       OUT1BSP             ; output contents
                     clr       SHFTREG
                     clr       SHFTREG+1
-; *while 1
-; *a = termarg();
-;     switch(a)
-;          case(space):
-;             chgbyt();
-;             ptrmem[]++;
-;             if(ptrmem%16 == 0) start new line;
-;          case(linefeed | +):
-;             chgbyt();
-;             ptrmem[]++;
-;          case(up arrow | backspace | -):
-;               chgbyt();
-;               ptrmem[]--;
-;          case('/' | '='):
-;               chgbyt();
-;               outcrlf();
-;          case(O):
-;               d = ptrmem[0] - (shftreg);
-;               if($80 < d < $ff81)
-;                    print(out of range);
-;               countt1 = d-1;
-;               out1bsp(countt1);
-;          case(carriage return):
-;               chgbyt();
-;               return;
-;          default: return(command?)
+;*while 1
+;*a = termarg();
+;*     switch(a)
+;*          case(space):
+;*             chgbyt();
+;*             ptrmem[]++;
+;*             if(ptrmem%16 == 0) start new line;
+;*          case(linefeed | +):
+;*             chgbyt();
+;*             ptrmem[]++;
+;*          case(up arrow | backspace | -):
+;*               chgbyt();
+;*               ptrmem[]--;
+;*          case('/' | '='):
+;*               chgbyt();
+;*               outcrlf();
+;*          case(O):
+;*               d = ptrmem[0] - (shftreg);
+;*               if($80 < d < $ff81)
+;*                    print(out of range);
+;*               countt1 = d-1;
+;*               out1bsp(countt1);
+;*          case(carriage return):
+;*               chgbyt();
+;*               return;
+;*          default: return(command?)
 
 MEM4                jsr       TERMARG
                     jsr       UPCASE
                     ldx       PTRMEM
-                    cmpa      #$20
+
+                    cmpa      #' '
                     beq       MEMSP               ; jump if space
-                    cmpa      #$0A
+
+                    cmpa      #LF
                     beq       MEMLF               ; jump if linefeed
-                    cmpa      #$2B
+
+                    cmpa      #'+'
                     beq       MEMPLUS             ; jump if +
-                    cmpa      #$5E
+
+                    cmpa      #'^'
                     beq       MEMUA               ; jump if up arrow
-                    cmpa      #$2D
+
+                    cmpa      #'-'
                     beq       MEMUA               ; jump if -
-                    cmpa      #$08
+
+                    cmpa      #8
                     beq       MEMUA               ; jump if backspace
+
                     cmpa      #'/'
                     beq       MEMSL               ; jump if /
+
                     cmpa      #'='
                     beq       MEMSL               ; jump if =
+
                     cmpa      #'O'
                     beq       MEMOFF              ; jump if O
-                    cmpa      #$0D
+
+                    cmpa      #CR
                     beq       MEMCR               ; jump if carriage ret
+
                     cmpa      #'.'
-                    beq       MEMEND              ; jump if .
+                    beq       :AnRTS              ; jump if .
+
                     ldx       #MSG8               ; "command?"
                     jsr       OUTSTRG
-                    jmp       MEM1
+                    bra       MEM1
 
 MEMSP               jsr       CHGBYT
                     inx
                     stx       PTRMEM
                     xgdx
                     andb      #$0F
-                    beq       MEMSP1              ; jump if mod16=0
-                    jmp       MEM3                ; continue same line
-
-MEMSP1              jmp       MEM1                ; .. else start new line
+                    bne       MEM3                ; continue same line
+                    bra       MEM1                ; .. else start new line
 
 MEMLF               jsr       CHGBYT
                     inx
                     stx       PTRMEM
-                    jmp       MEM2                ; output next address
+                    bra       MEM2                ; output next address
 
 MEMPLUS             jsr       CHGBYT
                     inx
                     stx       PTRMEM
-                    jmp       MEM1                ; output cr, next address
+                    bra       MEM1                ; output cr, next address
 
 MEMUA               jsr       CHGBYT
                     dex
                     stx       PTRMEM
-                    jmp       MEM1                ; output cr, previous address
+                    bra       MEM1                ; output cr, previous address
 
 MEMSL               jsr       CHGBYT
-                    jmp       MEM1                ; output cr, same address
+                    bra       MEM1                ; output cr, same address
 
 MEMOFF              ldd       SHFTREG             ; destination addr
                     subd      PTRMEM
-                    cmpa      #$0
+                    tsta
                     bne       MEMOFF1             ; jump if not 0
                     cmpb      #$80
                     bls       MEMOFF3             ; jump if in range
@@ -1976,32 +1956,32 @@ MEMOFF1             cmpa      #$FF
                     bne       MEMOFF2             ; out of range
                     cmpb      #$81
                     bhs       MEMOFF3             ; in range
+
 MEMOFF2             ldx       #MSG3               ; "Too long"
                     jsr       OUTSTRG
                     jmp       MEM1                ; output cr, addr, contents
 
-MEMOFF3             subd      #$1                 ; b now has offset
-                    stab      TMP4
+MEMOFF3             decd                          ; b now has offset
+                    stb       TMP4
                     jsr       OUTSPAC
                     ldx       #TMP4
                     jsr       OUT1BSP             ; output offset
                     jmp       MEM1                ; output cr, addr, contents
 
 MEMCR               jsr       CHGBYT
-MEMEND              rts                           ; exit task
+                    rts                           ; exit task
 
+;*******************************************************************************
+;* move <src1> <src2> [<dest>]  - move
+;* block at <src1> to <src2> to <dest>.
+;* Moves block 1 byte up if no <dest>.
+;*******************************************************************************
+;*a = buffarg();
+;*if(countu1 = 0) return(bad argument);
+;*if( !wchek(a) ) return(bad argument);
+;*ptr1 = shftreg;         /* src1 */
 
-;**********
-;   move <src1> <src2> [<dest>]  - move
-; *block at <src1> to <src2> to <dest>.
-;  Moves block 1 byte up if no <dest>.
-;**********
-; *a = buffarg();
-; *if(countu1 = 0) return(bad argument);
-; *if( !wchek(a) ) return(bad argument);
-; *ptr1 = shftreg;         /* src1 */
-
-MOVE                equ       *
+MOVE                proc
                     jsr       BUFFARG
                     tst       COUNT
                     beq       MOVERR              ; jump if no arg
@@ -2010,10 +1990,10 @@ MOVE                equ       *
                     ldx       SHFTREG             ; src1
                     stx       PTR1
 
-; *a = buffarg();
-; *if(countu1 = 0) return(bad argument);
-; *if( !dchek(a) ) return(bad argument);
-; *ptr2 = shftreg;         /* src2 */
+;*a = buffarg();
+;*if(countu1 = 0) return(bad argument);
+;*if( !dchek(a) ) return(bad argument);
+;*ptr2 = shftreg;         /* src2 */
 
                     jsr       BUFFARG
                     tst       COUNT
@@ -2023,11 +2003,11 @@ MOVE                equ       *
                     ldx       SHFTREG             ; src2
                     stx       PTR2
 
-; *a = buffarg();
-; *a = wskip();
-; *if(a != cr) return(bad argument);
-; *if(countu1 != 0) tmp2 = shftreg;  /* dest */
-; *else tmp2 = ptr1 + 1;
+;*a = buffarg();
+;*a = wskip();
+;*if(a != cr) return(bad argument);
+;*if(countu1 != 0) tmp2 = shftreg;  /* dest */
+;*else tmp2 = ptr1 + 1;
 
                     jsr       BUFFARG
                     jsr       WSKIP
@@ -2045,10 +2025,11 @@ MOVE1               ldx       PTR1
                     inx                           ; default dest
 MOVE2               stx       PTR3
 
-; *if(src1 < dest <= src2)
-;     dest = dest+(src2-src1);
-;     for(x = src2; x = src1; x--)
-;          dest[0]-- = x[0]--;
+;*if(src1 < dest <= src2)
+;*     dest = dest+(src2-src1);
+;*     for(x = src2; x = src1; x--)
+;*          dest[0]-- = x[0]--;
+
                     ldx       PTR3                ; dest
                     cpx       PTR1                ; src1
                     bls       MOVE3               ; jump if dest =< src1
@@ -2060,86 +2041,80 @@ MOVE2               stx       PTR3
                     std       PTR3                ; dest = dest+(src2-src1)
                     ldx       PTR2
 MOVELP1             jsr       CHKABRT             ; check for abort
-                    ldaa      ,X                  ; char at src2
+                    lda       ,X                  ; char at src2
                     pshx
                     ldx       PTR3
                     jsr       WRITE               ; write a to x
-                    cmpa      0,X
+                    cmpa      ,x
                     bne       MOVEBAD             ; jump if no write
                     dex
                     stx       PTR3
                     pulx
                     cpx       PTR1
-                    beq       MOVRTS
+                    beq       :AnRTS
                     dex
                     bra       MOVELP1             ; Loop SRC2 - SRC1 times
 
-;
-
-; else
-
-;     for(x=src1; x=src2; x++)
-
-;          dest[0]++ = x[0]++;
-
+;* else
+;*     for(x=src1; x=src2; x++)
+;*          dest[0]++ = x[0]++;
 
 MOVE3               ldx       PTR1                ; srce1
 MOVELP2             jsr       CHKABRT             ; check for abort
-                    ldaa      ,X
+                    lda       ,X
                     pshx
                     ldx       PTR3                ; dest
                     jsr       WRITE               ; write a to x
-                    cmpa      0,X
+                    cmpa      ,x
                     bne       MOVEBAD             ; jump if no write
                     inx
                     stx       PTR3
                     pulx
                     cpx       PTR2
-                    beq       MOVRTS
+                    beq       :AnRTS
                     inx
                     bra       MOVELP2             ; Loop SRC2-SRC1 times
-
-MOVRTS              rts
 
 MOVEBAD             pulx                          ; restore stack
                     ldx       #PTR3
                     jsr       OUT2BSP             ; output bad address
                     rts
 
+;*******************************************************************************
+;*  assem(addr) -68HC11 line assembler/disassembler.
+;*       This routine will disassemble the opcode at
+;*<addr> and then allow the user to enter a line for
+;*assembly. Rules for assembly are as follows:
+;* -A '#' sign indicates immediate addressing.
+;* -A ',' (comma) indicates indexed addressing
+;*       and the next character must be X or Y.
+;* -All arguments are assumed to be hex and the
+;*       '$' sign shouldn't be used.
+;* -Arguments should be separated by 1 or more
+;*       spaces or tabs.
+;* -Any input after the required number of
+;*       arguments is ignored.
+;* -Upper or lower case makes no difference.
+;*
+;*       To signify end of input line, the following
+;*commands are available and have the indicated action:
+;*   <cr>      - Finds the next opcode for
+;*          assembly.  If there was no assembly input,
+;*          the next opcode disassembled is retrieved
+;*          from the disassembler.
+;*   <lf><+>   - Works the same as carriage return
+;*          except if there was no assembly input, the
+;*          <addr> is incremented and the next <addr> is
+;*          disassembled.
+;*    <^><->   - Decrements <addr> and the previous
+;*          address is then disassembled.
+;*    </><=>   - Redisassembles the current address.
+;*
+;*       To exit the assembler use CONTROL A or . (period).
+;*Of course control X and DEL will also allow you to abort.
 
-;****************
-;  assem(addr) -68HC11 line assembler/disassembler.
-;       This routine will disassemble the opcode at
-; *<addr> and then allow the user to enter a line for
-; *assembly. Rules for assembly are as follows:
-; -A '#' sign indicates immediate addressing.
-; -A ',' (comma) indicates indexed addressing
-;       and the next character must be X or Y.
-; -All arguments are assumed to be hex and the
-;       '$' sign shouldn't be used.
-; -Arguments should be separated by 1 or more
-;       spaces or tabs.
-; -Any input after the required number of
-;       arguments is ignored.
-; -Upper or lower case makes no difference.
-;
-;       To signify end of input line, the following
-; *commands are available and have the indicated action:
-;   <cr>      - Finds the next opcode for
-;          assembly.  If there was no assembly input,
-;          the next opcode disassembled is retrieved
-;          from the disassembler.
-;   <lf><+>   - Works the same as carriage return
-;          except if there was no assembly input, the
-;          <addr> is incremented and the next <addr> is
-;          disassembled.
-;    <^><->   - Decrements <addr> and the previous
-;          address is then disassembled.
-;    </><=>   - Redisassembles the current address.
-;
-;       To exit the assembler use CONTROL A or . (period).
-; *Of course control X and DEL will also allow you to abort.
 ;*** Equates for assembler ***
+
 PAGE1               equ       $00                 ; values for page opcodes
 PAGE2               equ       $18
 PAGE3               equ       $1A
@@ -2151,6 +2126,7 @@ LIMMED              equ       $3                  ; (long immediate)
 OTHER               equ       $4
 
 ;*** Rename variables for assem/disassem ***
+
 AMODE               equ       TMP2                ; addressing mode
 YFLAG               equ       TMP3
 PNORM               equ       TMP4                ; page for normal opcode
@@ -2166,122 +2142,117 @@ MNEPTR              equ       PTR6                ; pointer to table for dis
 ASSCOMM             equ       PTR7                ; subcommand for assembler
 
 ;*** Error messages for assembler ***
-MSGDIR              fdb       MSGA1               ; message table index
-                    fdb       MSGA2
-                    fdb       MSGA3
-                    fdb       MSGA4
-                    fdb       MSGA5
-                    fdb       MSGA6
-                    fdb       MSGA7
-                    fdb       MSGA8
-                    fdb       MSGA9
-MSGA1               fcc       'Immed mode illegal'
-                    fcb       EOT
-MSGA2               fcc       'Error in Mne table'
-                    fcb       EOT
-MSGA3               fcc       'Illegal bit op'
-                    fcb       EOT
-MSGA4               fcc       'Bad argument'
-                    fcb       EOT
-MSGA5               fcc       'Mnemonic not found'
-                    fcb       EOT
-MSGA6               fcc       'Unknown addressing mode'
-                    fcb       EOT
-MSGA7               fcc       'Indexed addressing assumed'
-                    fcb       EOT
-MSGA8               fcc       'Syntax error'
-                    fcb       EOT
-MSGA9               fcc       'Branch out of range'
-                    fcb       EOT
 
-;**********
-; *oldpc = rambase;
-; *a = wskip();
-; *if (a != cr)
-;   buffarg()
-;   a = wskip();
-;   if ( a != cr ) return(error);
-;   oldpc = a;
-ASSEM               equ       *
-                    ldx       #RAMBS
+MSGDIR              dw        MSGA1               ; message table index
+                    dw        MSGA2
+                    dw        MSGA3
+                    dw        MSGA4
+                    dw        MSGA5
+                    dw        MSGA6
+                    dw        MSGA7
+                    dw        MSGA8
+                    dw        MSGA9
+
+MSGA1               fcc       'Immed mode illegal',EOT
+MSGA2               fcc       'Error in Mne table',EOT
+MSGA3               fcc       'Illegal bit op',EOT
+MSGA4               fcc       'Bad argument',EOT
+MSGA5               fcc       'Mnemonic not found',EOT
+MSGA6               fcc       'Unknown addressing mode',EOT
+MSGA7               fcc       'Indexed addressing assumed',EOT
+MSGA8               fcc       'Syntax error',EOT
+MSGA9               fcc       'Branch out of range',EOT
+
+;*******************************************************************************
+;*oldpc = rambase;
+;*a = wskip();
+;*if (a != cr)
+;*   buffarg()
+;*   a = wskip();
+;*   if ( a != cr ) return(error);
+;*   oldpc = a;
+
+ASSEM               proc
+                    ldx       #RAM
                     stx       OLDPC
                     jsr       WSKIP
                     beq       ASSLOOP             ; jump if no argument
                     jsr       BUFFARG
                     jsr       WSKIP
-                    beq       ASSEM1              ; jump if argument ok
+                    beq       Done@@              ; jump if argument ok
                     ldx       #MSGA4              ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-ASSEM1              ldx       SHFTREG
+Done@@              ldx       SHFTREG
                     stx       OLDPC
 
-; *repeat
-;  pc = oldpc;
-;  out2bsp(pc);
-;  disassem();
-;  a=readln();
-;  asscomm = a;  /* save command */
-;  if(a == [^,+,-,/,=]) outcrlf;
-;  if(a == 0) return(error);
+;*repeat
+;*  pc = oldpc;
+;*  out2bsp(pc);
+;*  disassem();
+;*  a=readln();
+;*  asscomm = a;  /* save command */
+;*  if(a == [^,+,-,/,=]) outcrlf;
+;*  if(a == 0) return(error);
 
-ASSLOOP             ldx       OLDPC
+ASSLOOP             proc
+                    ldx       OLDPC
                     stx       PC
                     jsr       OUTCRLF
                     ldx       #PC
                     jsr       OUT2BSP             ; output the address
                     jsr       DISASSM             ; disassemble opcode
                     jsr       TABTO
-                    ldaa      #PROMPT             ; prompt user
-                    jsr       OUTA                ; output prompt character
+                    @outa     #PROMPT             ; prompt user
                     jsr       READLN              ; read input for assembly
-                    staa      ASSCOMM
+                    sta       ASSCOMM
+
                     cmpa      #'^'
                     beq       ASSLP0              ; jump if '^'
+
                     cmpa      #'+'
                     beq       ASSLP0              ; jump if '+'
+
                     cmpa      #'-'
                     beq       ASSLP0              ; jump if '-'
+
                     cmpa      #'/'
                     beq       ASSLP0              ; jump if '/'
+
                     cmpa      #'='
                     beq       ASSLP0              ; jump if '='
-                    cmpa      #$00
+
+                    tsta
                     bne       ASSLP1              ; jump if none of above
+
                     rts                           ; return if bad input
 
 ASSLP0              jsr       OUTCRLF
-ASSLP1              equ       *                   ; come here for cr or lf
-                    jsr       OUTSPAC
-                    jsr       OUTSPAC
-                    jsr       OUTSPAC
-                    jsr       OUTSPAC
-                    jsr       OUTSPAC
+ASSLP1              jsr:5     OUTSPAC             ; come here for cr or lf
 
-;  b = parse(input); /* get mnemonic */
-;  if(b > 5) print("not found"); asscomm='/';
-;  elseif(b >= 1)
-;     msrch();
-;     if(class==$FF)
-;        print("not found"); asscomm='/';
-;     else
-;        a = doop(opcode,class);
-;        if(a == 0) dispc=0;
-;        else process error; asscomm='/';
+;*  b = parse(input); /* get mnemonic */
+;*  if(b > 5) print("not found"); asscomm='/';
+;*  elseif(b >= 1)
+;*     msrch();
+;*     if(class==$FF)
+;*        print("not found"); asscomm='/';
+;*     else
+;*        a = doop(opcode,class);
+;*        if(a == 0) dispc=0;
+;*        else process error; asscomm='/';
 
                     jsr       PARSE
-                    cmpb      #$5
+                    cmpb      #5
                     ble       ASSLP2              ; jump if mnemonic <= 5 chars
                     ldx       #MSGA5              ; "mnemonic not found"
                     jsr       OUTSTRG
                     bra       ASSLP5
 
-ASSLP2              equ       *
-                    cmpb      #$0
+ASSLP2              tstb
                     beq       ASSLP10             ; jump if no input
                     jsr       MSRCH
-                    ldaa      CLASS
+                    lda       CLASS
                     cmpa      #$FF
                     bne       ASSLP3
                     ldx       #MSGA5              ; "mnemonic not found"
@@ -2289,32 +2260,31 @@ ASSLP2              equ       *
                     bra       ASSLP5
 
 ASSLP3              jsr       DOOP
-                    cmpa      #$00
+                    tsta
                     bne       ASSLP4              ; jump if doop error
-                    ldx       #$00
+                    clrx
                     stx       DISPC               ; indicate good assembly
                     bra       ASSLP10
 
 ASSLP4              deca                          ; a = error message index
                     tab
                     ldx       #MSGDIR
-                    abx
-                    abx
-                    ldx       0,X
+                    abx:2
+                    ldx       ,x
                     jsr       OUTSTRG             ; output error message
 ASSLP5              clr       ASSCOMM             ; error command
 
-;  /* compute next address - asscomm holds subcommand
-;     and dispc indicates if valid assembly occured. */
-;  if(asscomm== ^ or -) oldpc--;
-;  if(asscomm==(lf or + or cr)
-;     if(dispc==0) oldpc=pc;   /* good assembly */
-;     else
-;        if(asscomm==lf or +) dispc= ++oldpc;
-;        oldpc=dispc;
-; *until(eot)
-ASSLP10             equ       *
-                    ldaa      ASSCOMM
+;*  /* compute next address - asscomm holds subcommand
+;*     and dispc indicates if valid assembly occured. */
+;*  if(asscomm== ^ or -) oldpc--;
+;*  if(asscomm==(lf or + or cr)
+;*     if(dispc==0) oldpc=pc;   /* good assembly */
+;*     else
+;*        if(asscomm==lf or +) dispc= ++oldpc;
+;*        oldpc=dispc;
+;*until(eot)
+
+ASSLP10             lda       ASSCOMM
                     cmpa      #'^'
                     beq       ASSLPA              ; jump if '^'
                     cmpa      #'-'
@@ -2324,11 +2294,11 @@ ASSLPA              ldx       OLDPC               ; back up for '^' or '-'
                     stx       OLDPC
                     bra       ASSLP15
 
-ASSLP11             cmpa      #$0A
+ASSLP11             cmpa      #LF
                     beq       ASSLP12             ; jump if linefeed
                     cmpa      #'+'
                     beq       ASSLP12             ; jump if '+'
-                    cmpa      #$0D
+                    cmpa      #CR
                     bne       ASSLP15             ; jump if not cr
 ASSLP12             ldx       DISPC
                     bne       ASSLP13             ; jump if dispc != 0
@@ -2336,7 +2306,7 @@ ASSLP12             ldx       DISPC
                     stx       OLDPC
                     bra       ASSLP15
 
-ASSLP13             cmpa      #$0A
+ASSLP13             cmpa      #LF
                     beq       ASSLPB              ; jump not lf
                     cmpa      #'+'
                     bne       ASSLP14             ; jump not lf or '+'
@@ -2347,565 +2317,568 @@ ASSLP14             ldx       DISPC
                     stx       OLDPC
 ASSLP15             jmp       ASSLOOP
 
-;****************
-;  readln() --- Read input from terminal into buffer
-; until a command character is read (cr,lf,/,^).
-; If more chars are typed than the buffer will hold,
-; the extra characters are overwritten on the end.
-;  On exit: b=number of chars read, a=0 if quit,
-; else a=next command.
-;****************
-; *for(b==0;b<=bufflng;b++) inbuff[b] = cr;
+;*******************************************************************************
+;*  readln() --- Read input from terminal into buffer
+;* until a command character is read (cr,lf,/,^).
+;* If more chars are typed than the buffer will hold,
+;* the extra characters are overwritten on the end.
+;*  On exit: b=number of chars read, a=0 if quit,
+;* else a=next command.
+;*******************************************************************************
+;*for(b==0;b<=bufflng;b++) inbuff[b] = cr;
 
-READLN              clrb
-                    ldaa      #$0D                ; carriage ret
-RLN0                ldx       #INBUFF
+READLN              proc
+                    ldd       #CR<8               ; A = carriage ret, B = 0
+Loop@@              ldx       #INBUFF
                     abx
-                    staa      0,X                 ; initialize input buffer
+                    sta       ,X                  ; initialize input buffer
                     incb
                     cmpb      #BUFFLNG
-                    blt       RLN0
-; *b=0;
-; *repeat
-;  if(a == (ctla, cntlc, cntld, cntlx, del))
-;     return(a=0);
-;  if(a == backspace)
-;     if(b > 0) b--;
-;     else b=0;
-;  else  inbuff[b] = upcase(a);
-;  if(b < bufflng) b++;
-; *until (a == [cr,lf,+,^,-,/,=])
-; *return(a);
+                    blt       Loop@@
+;*b=0;
+;*repeat
+;*  if(a == (ctla, cntlc, cntld, cntlx, del))
+;*     return(a=0);
+;*  if(a == backspace)
+;*     if(b > 0) b--;
+;*     else b=0;
+;*  else  inbuff[b] = upcase(a);
+;*  if(b < bufflng) b++;
+;*until (a == [cr,lf,+,^,-,/,=])
+;*return(a);
 
                     clrb
-RLN1                jsr       INCHAR
+MainLoop@@          jsr       INCHAR
+
                     cmpa      #DEL                ; Delete
                     beq       RLNQUIT
+
                     cmpa      #CTLX               ; Control X
                     beq       RLNQUIT
+
                     cmpa      #CTLA               ; Control A
                     beq       RLNQUIT
+
                     cmpa      #$2E                ; Period
                     beq       RLNQUIT
+
                     cmpa      #$03                ; Control C
                     beq       RLNQUIT
+
                     cmpa      #$04                ; Control D
                     beq       RLNQUIT
+
                     cmpa      #$08                ; backspace
                     bne       RLN2
+
                     decb
-                    bgt       RLN1
+                    bgt       MainLoop@@
                     bra       READLN              ; start over
 
 RLN2                ldx       #INBUFF
                     abx
                     jsr       UPCASE
-                    staa      0,X                 ; put char in buffer
+                    sta       ,X                  ; put char in buffer
                     cmpb      #BUFFLNG            ; max buffer length
                     bge       RLN3                ; jump if buffer full
                     incb                          ; move buffer pointer
-RLN3                jsr       ASSCHEK             ; check for subcommand
-                    bne       RLN1
+RLN3                bsr       ASSCHEK             ; check for subcommand
+                    bne       MainLoop@@
                     rts
 
 RLNQUIT             clra                          ; quit
                     rts                           ; return
 
+;*******************************************************************************
+;* parse() -parse out the mnemonic from INBUFF
+;* to COMBUFF. on exit: b=number of chars parsed.
+;*******************************************************************************
+;*combuff[3] = <space>;   initialize 4th character to space.
+;*ptrbuff[] = inbuff[];
+;*a=wskip();
+;*for (b = 0; b = 5; b++)
+;*   a=readbuff(); incbuff();
+;*   if (a = (cr,lf,^,/,wspace)) return(b);
+;*   combuff[b] = upcase(a);
+;*return(b);
 
-;**********
-;  parse() -parse out the mnemonic from INBUFF
-; to COMBUFF. on exit: b=number of chars parsed.
-;**********
-; *combuff[3] = <space>;   initialize 4th character to space.
-; *ptrbuff[] = inbuff[];
-; *a=wskip();
-; *for (b = 0; b = 5; b++)
-;   a=readbuff(); incbuff();
-;   if (a = (cr,lf,^,/,wspace)) return(b);
-;   combuff[b] = upcase(a);
-; *return(b);
-
-PARSE               ldaa      #$20
-                    staa      COMBUFF+3
+PARSE               proc
+                    lda       #$20
+                    sta       COMBUFF+3
                     ldx       #INBUFF             ; initialize buffer ptr
                     stx       PTR0
                     jsr       WSKIP               ; find first character
                     clrb
-PARSLP              jsr       READBUFF            ; read character
+Loop@@              jsr       READBUFF            ; read character
                     jsr       INCBUFF
                     jsr       WCHEK
-                    beq       PARSRT              ; jump if whitespace
-                    jsr       ASSCHEK
-                    beq       PARSRT              ; jump if end of line
+                    beq       :AnRTS              ; jump if whitespace
+                    bsr       ASSCHEK
+                    beq       :AnRTS              ; jump if end of line
                     jsr       UPCASE              ; convert to upper case
                     ldx       #COMBUFF
                     abx
-                    staa      0,X                 ; store in combuff
+                    sta       ,X                  ; store in combuff
                     incb
-                    cmpb      #$5
-                    ble       PARSLP              ; loop 6 times
-PARSRT              rts
+                    cmpb      #5
+                    ble       Loop@@              ; loop 6 times
+                    rts
 
+;*******************************************************************************
+;* asschek() -perform compares for lf, cr, ^, /, +, -, =
+;*******************************************************************************
 
-;****************
-;  asschek() -perform compares for
-; lf, cr, ^, /, +, -, =
-;****************
-ASSCHEK             cmpa      #$0A                ; linefeed
-                    beq       ASSCHK1
-                    cmpa      #$0D                ; carriage ret
-                    beq       ASSCHK1
+ASSCHEK             proc
+                    cmpa      #LF                 ; linefeed
+                    beq       :AnRTS
+
+                    cmpa      #CR                 ; carriage ret
+                    beq       :AnRTS
+
                     cmpa      #'^'                ; up arrow
-                    beq       ASSCHK1
+                    beq       :AnRTS
+
                     cmpa      #'/'                ; slash
-                    beq       ASSCHK1
+                    beq       :AnRTS
+
                     cmpa      #'+'                ; plus
-                    beq       ASSCHK1
+                    beq       :AnRTS
+
                     cmpa      #'-'                ; minus
-                    beq       ASSCHK1
+                    beq       :AnRTS
+
                     cmpa      #'='                ; equals
-ASSCHK1             rts
+                    rts
 
+;*******************************************************************************
+;*  msrch() --- Search MNETABL for mnemonic in COMBUFF.
+;*stores base opcode at baseop and class at class.
+;*  Class = FF if not found.
+;*******************************************************************************
+;*while ( != EOF )
+;*   if (COMBUFF[0-3] = MNETABL[0-3])
+;*      return(MNETABL[4],MNETABL[5]);
+;*   else *MNETABL =+ 6
 
-;*********
-;  msrch() --- Search MNETABL for mnemonic in COMBUFF.
-; *stores base opcode at baseop and class at class.
-;  Class = FF if not found.
-;**********
-; *while ( != EOF )
-;   if (COMBUFF[0-3] = MNETABL[0-3])
-;      return(MNETABL[4],MNETABL[5]);
-;   else *MNETABL =+ 6
-
-MSRCH               ldx       #MNETABL            ; pointer to mnemonic table
+MSRCH               proc
+                    ldx       #MNETABL            ; pointer to mnemonic table
                     ldy       #COMBUFF            ; pointer to string
                     bra       MSRCH1
 
-MSNEXT              equ       *
-                    ldab      #6
+MSNEXT              ldb       #6
                     abx                           ; point to next table entry
-MSRCH1              ldaa      0,X                 ; read table
+MSRCH1              lda       ,X                  ; read table
                     cmpa      #EOT
                     bne       MSRCH2              ; jump if not end of table
-                    ldaa      #$FF
-                    staa      CLASS               ; FF = not in table
+                    lda       #$FF
+                    sta       CLASS               ; FF = not in table
                     rts
 
-MSRCH2              cmpa      0,Y                 ; op[0] = tabl[0] ?
+MSRCH2              cmpa      ,Y                  ; op[0] = tabl[0] ?
                     bne       MSNEXT
-                    ldaa      1,X
+                    lda       1,X
                     cmpa      1,Y                 ; op[1] = tabl[1] ?
                     bne       MSNEXT
-                    ldaa      2,X
+                    lda       2,X
                     cmpa      2,Y                 ; op[2] = tabl[2] ?
                     bne       MSNEXT
-                    ldaa      3,X
+                    lda       3,X
                     cmpa      3,Y                 ; op[2] = tabl[2] ?
                     bne       MSNEXT
                     ldd       4,X                 ; opcode, class
-                    staa      BASEOP
-                    stab      CLASS
+                    sta       BASEOP
+                    stb       CLASS
                     rts
 
-;**********
+;*******************************************************************************
 ;**   doop(baseop,class) --- process mnemonic.
-;**   on exit: a=error code corresponding to error
-;**                                     messages.
-;**********
-; *amode = OTHER; /* addressing mode */
-; *yflag = 0;     /* ynoimm, nlimm, and cpd flag */
-; *x[] = ptrbuff[]
+;**   on exit: a=error code corresponding to error messages.
+;*******************************************************************************
+;*amode = OTHER; /* addressing mode */
+;*yflag = 0;     /* ynoimm, nlimm, and cpd flag */
+;*x[] = ptrbuff[]
 
-DOOP                equ       *
-                    ldaa      #OTHER
-                    staa      AMODE               ; mode
+DOOP                proc
+                    lda       #OTHER
+                    sta       AMODE               ; mode
                     clr       YFLAG
                     ldx       PTR0
 
-; *while (*x != end of buffer)
-;   if (x[0]++ == ',')
-;      if (x[0] == 'y') amode = INDY;
-;      else amod = INDX;
-;      break;
-; *a = wskip()
-; *if( a == '#' ) amode = IMMED;
+;*while (*x != end of buffer)
+;*   if (x[0]++ == ',')
+;*      if (x[0] == 'y') amode = INDY;
+;*      else amod = INDX;
+;*      break;
+;*a = wskip()
+;*if( a == '#' ) amode = IMMED;
 
 DOPLP1              cpx       #ENDBUFF            ; (end of buffer)
                     beq       DOOP1               ; jump if end of buffer
-                    ldd       0,X                 ; read 2 chars from buffer
+                    ldd       ,X                  ; read 2 chars from buffer
                     inx                           ; move pointer
                     cmpa      #','
                     bne       DOPLP1
                     cmpb      #'Y'                ; look for ",y"
                     bne       DOPLP2
-                    ldaa      #INDY
-                    staa      AMODE
+                    lda       #INDY
+                    sta       AMODE
                     bra       DOOP1
 
 DOPLP2              cmpb      #'X'                ; look for ",x"
                     bne       DOOP1               ; jump if not x
-                    ldaa      #INDX
-                    staa      AMODE
-                    bra       DOOP1
+                    lda       #INDX
+                    sta       AMODE
 
 DOOP1               jsr       WSKIP
                     cmpa      #'#'                ; look for immediate mode
                     bne       DOOP2
                     jsr       INCBUFF             ; point at argument
-                    ldaa      #IMMED
-                    staa      AMODE
-DOOP2               equ       *
+                    lda       #IMMED
+                    sta       AMODE
+DOOP2
 
-; *switch(class)
-                    ldab      CLASS
+;*switch(class)
+                    ldb       CLASS
                     cmpb      #P2INH
-                    bne       DOSW1
-                    jmp       DOP2I
+                    beq       DOP2I
 
-DOSW1               cmpb      #INH
-                    bne       DOSW2
-                    jmp       DOINH
+                    cmpb      #INH
+                    beq       DOINH
 
-DOSW2               cmpb      #REL
-                    bne       DOSW3
-                    jmp       DOREL
+                    cmpb      #REL
+                    beq       DOREL
 
-DOSW3               cmpb      #LIMM
-                    bne       DOSW4
-                    jmp       DOLIM
+                    cmpb      #LIMM
+                    jeq       DOLIM
 
-DOSW4               cmpb      #NIMM
-                    bne       DOSW5
-                    jmp       DONOI
+                    cmpb      #NIMM
+                    jeq       DONOI
 
-DOSW5               cmpb      #GEN
-                    bne       DOSW6
-                    jmp       DOGENE
+                    cmpb      #GEN
+                    jeq       DOGENE
 
-DOSW6               cmpb      #GRP2
-                    bne       DOSW7
-                    jmp       DOGRP
+                    cmpb      #GRP2
+                    jeq       DOGRP
 
-DOSW7               cmpb      #CPD
-                    bne       DOSW8
-                    jmp       DOCPD
+                    cmpb      #CPD
+                    jeq       DOCPD
 
-DOSW8               cmpb      #XNIMM
-                    bne       DOSW9
-                    jmp       DOXNOI
+                    cmpb      #XNIMM
+                    jeq       DOXNOI
 
-DOSW9               cmpb      #XLIMM
-                    bne       DOSW10
-                    jmp       DOXLI
+                    cmpb      #XLIMM
+                    jeq       DOXLI
 
-DOSW10              cmpb      #YNIMM
-                    bne       DOSW11
-                    jmp       DOYNOI
+                    cmpb      #YNIMM
+                    jeq       DOYNOI
 
-DOSW11              cmpb      #YLIMM
-                    bne       DOSW12
-                    jmp       DOYLI
+                    cmpb      #YLIMM
+                    jeq       DOYLI
 
-DOSW12              cmpb      #BTB
-                    bne       DOSW13
-                    jmp       DOBTB
+                    cmpb      #BTB
+                    jeq       DOSET
 
-DOSW13              cmpb      #SETCLR
-                    bne       DODEF
-                    jmp       DOSET
+                    cmpb      #SETCLR
+                    jeq       DOSET
 
-;   default: return("error in mnemonic table");
+          ; default: return("error in mnemonic table");
 
-DODEF               ldaa      #$2
+                    lda       #2
                     rts
 
-;  case P2INH: emit(PAGE2)
+;*  case P2INH: emit(PAGE2)
 
-DOP2I               ldaa      #PAGE2
+DOP2I               proc
+                    lda       #PAGE2
                     jsr       EMIT
 
-;  case INH: emit(baseop);
-;       return(0);
+;*  case INH: emit(baseop);
+;*       return(0);
 
-DOINH               ldaa      BASEOP
+DOINH               proc
+                    lda       BASEOP
                     jsr       EMIT
                     clra
                     rts
 
-;  case REL: a = assarg();
-;            if(a=4) return(a);
-;            d = address - pc + 2;
-;            if ($7f >= d >= $ff82)
-;               return (out of range);
-;            emit(opcode);
-;            emit(offset);
-;            return(0);
+;*  case REL: a = assarg();
+;*            if(a=4) return(a);
+;*            d = address - pc + 2;
+;*            if ($7f >= d >= $ff82)
+;*               return (out of range);
+;*            emit(opcode);
+;*            emit(offset);
+;*            return(0);
 
-DOREL               jsr       ASSARG
+DOREL               proc
+                    jsr       ASSARG
                     cmpa      #$04
-                    bne       DOREL1              ; jump if arg ok
-                    rts
+                    beq       :AnRTS              ; exit if arg not ok
 
-DOREL1              ldd       SHFTREG             ; get branch address
+                    ldd       SHFTREG             ; get branch address
                     ldx       PC                  ; get program counter
-                    inx
-                    inx                           ; point to end of opcode
+                    inx:2                         ; point to end of opcode
                     stx       BRADDR
                     subd      BRADDR              ; calculate offset
                     std       BRADDR              ; save result
-                    cmpd      #$7F                ; in range ?
+                    cpd       #$7F                ; in range ?
                     bls       DOREL2              ; jump if in range
-                    cmpd      #$FF80
+                    cpd       #$FF80
                     bhs       DOREL2              ; jump if in range
-                    ldaa      #$09                ; 'Out of range'
+                    lda       #$09                ; 'Out of range'
                     rts
 
-DOREL2              ldaa      BASEOP
+DOREL2              lda       BASEOP
                     jsr       EMIT                ; emit opcode
-                    ldaa      BRADDR+1
+                    lda       BRADDR+1
                     jsr       EMIT                ; emit offset
                     clra                          ; normal return
                     rts
 
-;  case LIMM: if (amode == IMMED) amode = LIMMED;
+;*  case LIMM: if (amode == IMMED) amode = LIMMED;
 
-DOLIM               ldaa      AMODE
+DOLIM               proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DONOI
-                    ldaa      #LIMMED
-                    staa      AMODE
+                    lda       #LIMMED
+                    sta       AMODE
 
-;  case NIMM: if (amode == IMMED)
-;                return("Immediate mode illegal");
+;*  case NIMM: if (amode == IMMED)
+;*                return("Immediate mode illegal");
 
-DONOI               ldaa      AMODE
+DONOI               proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DOGENE              ; jump if not immediate
-                    ldaa      #$1                 ; "immediate mode illegal"
+                    lda       #1                  ; "immediate mode illegal"
                     rts
 
-;  case GEN: dogen(baseop,amode,PAGE1,PAGE1,PAGE2);
-;            return;
+;*  case GEN: dogen(baseop,amode,PAGE1,PAGE1,PAGE2);
+;*            return;
 
-DOGENE              ldaa      #PAGE1
-                    staa      PNORM
-                    staa      PX
-                    ldaa      #PAGE2
-                    staa      PY
+DOGENE              proc
+                    lda       #PAGE1
+                    sta       PNORM
+                    sta       PX
+                    lda       #PAGE2
+                    sta       PY
                     jsr       DOGEN
                     rts
 
-;  case GRP2: if (amode == INDY)
-;                emit(PAGE2);
-;                amode = INDX;
-;             if( amode == INDX )
-;                doindx(baseop);
-;             else a = assarg();
-;                if(a=4) return(a);
-;                emit(opcode+0x10);
-;                emit(extended address);
-;             return;
+;*  case GRP2: if (amode == INDY)
+;*                emit(PAGE2);
+;*                amode = INDX;
+;*             if( amode == INDX )
+;*                doindx(baseop);
+;*             else a = assarg();
+;*                if(a=4) return(a);
+;*                emit(opcode+0x10);
+;*                emit(extended address);
+;*             return;
 
-DOGRP               ldaa      AMODE
+DOGRP               proc
+                    lda       AMODE
                     cmpa      #INDY
                     bne       DOGRP1
-                    ldaa      #PAGE2
+                    lda       #PAGE2
                     jsr       EMIT
-                    ldaa      #INDX
-                    staa      AMODE
-DOGRP1              equ       *
-                    ldaa      AMODE
+                    lda       #INDX
+                    sta       AMODE
+
+DOGRP1              lda       AMODE
                     cmpa      #INDX
                     bne       DOGRP2
                     jsr       DOINDEX
                     rts
 
-DOGRP2              equ       *
-                    ldaa      BASEOP
-                    adda      #$10
+DOGRP2              lda       BASEOP
+                    adda      #16
                     jsr       EMIT
                     jsr       ASSARG
-                    cmpa      #$04
-                    beq       DOGRPRT             ; jump if bad arg
+                    cmpa      #4
+                    beq       :AnRTS              ; jump if bad arg
                     ldd       SHFTREG             ; extended address
                     jsr       EMIT
                     tba
                     jsr       EMIT
                     clra
-DOGRPRT             rts
+                    rts
 
-;  case CPD: if (amode == IMMED)
-;               amode = LIMMED; /* cpd */
-;            if( amode == INDY ) yflag = 1;
-;            dogen(baseop,amode,PAGE3,PAGE3,PAGE4);
-;            return;
+;*  case CPD: if (amode == IMMED)
+;*               amode = LIMMED; /* cpd */
+;*            if( amode == INDY ) yflag = 1;
+;*            dogen(baseop,amode,PAGE3,PAGE3,PAGE4);
+;*            return;
 
-DOCPD               ldaa      AMODE
+DOCPD               proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DOCPD1
-                    ldaa      #LIMMED
-                    staa      AMODE
-DOCPD1              ldaa      AMODE
+                    lda       #LIMMED
+                    sta       AMODE
+DOCPD1              lda       AMODE
                     cmpa      #INDY
                     bne       DOCPD2
                     inc       YFLAG
-DOCPD2              ldaa      #PAGE3
-                    staa      PNORM
-                    staa      PX
-                    ldaa      #PAGE4
-                    staa      PY
+DOCPD2              lda       #PAGE3
+                    sta       PNORM
+                    sta       PX
+                    lda       #PAGE4
+                    sta       PY
                     jsr       DOGEN
                     rts
 
-;  case XNIMM: if (amode == IMMED)      /* stx */
-;                 return("Immediate mode illegal");
+;*  case XNIMM: if (amode == IMMED)      /* stx */
+;*                 return("Immediate mode illegal");
 
-DOXNOI              ldaa      AMODE
+DOXNOI              proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DOXLI
-                    ldaa      #$1                 ; "immediate mode illegal"
+                    lda       #1                  ; "immediate mode illegal"
                     rts
 
-;  case XLIMM: if (amode == IMMED)  /* cpx, ldx */
-;                 amode = LIMMED;
-;              dogen(baseop,amode,PAGE1,PAGE1,PAGE4);
-;              return;
+;*  case XLIMM: if (amode == IMMED)  /* cpx, ldx */
+;*                 amode = LIMMED;
+;*              dogen(baseop,amode,PAGE1,PAGE1,PAGE4);
+;*              return;
 
-DOXLI               ldaa      AMODE
+DOXLI               proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DOXLI1
-                    ldaa      #LIMMED
-                    staa      AMODE
-DOXLI1              ldaa      #PAGE1
-                    staa      PNORM
-                    staa      PX
-                    ldaa      #PAGE4
-                    staa      PY
+                    lda       #LIMMED
+                    sta       AMODE
+DOXLI1              lda       #PAGE1
+                    sta       PNORM
+                    sta       PX
+                    lda       #PAGE4
+                    sta       PY
                     jsr       DOGEN
                     rts
 
-;  case YNIMM: if (amode == IMMED)      /* sty */
-;                 return("Immediate mode illegal");
+;*  case YNIMM: if (amode == IMMED)      /* sty */
+;*                 return("Immediate mode illegal");
 
-DOYNOI              ldaa      AMODE
+DOYNOI              proc
+                    lda       AMODE
                     cmpa      #IMMED
                     bne       DOYLI
-                    ldaa      #$1                 ; "immediate mode illegal"
+                    lda       #1                  ; "immediate mode illegal"
                     rts
 
-;  case YLIMM: if (amode == INDY) yflag = 1;/* cpy, ldy */
-;              if(amode == IMMED) amode = LIMMED;
-;              dogen(opcode,amode,PAGE2,PAGE3,PAGE2);
-;              return;
+;*  case YLIMM: if (amode == INDY) yflag = 1;/* cpy, ldy */
+;*              if(amode == IMMED) amode = LIMMED;
+;*              dogen(opcode,amode,PAGE2,PAGE3,PAGE2);
+;*              return;
 
-DOYLI               ldaa      AMODE
+DOYLI               proc
+                    lda       AMODE
                     cmpa      #INDY
                     bne       DOYLI1
                     inc       YFLAG
 DOYLI1              cmpa      #IMMED
                     bne       DOYLI2
-                    ldaa      #LIMMED
-                    staa      AMODE
-DOYLI2              ldaa      #PAGE2
-                    staa      PNORM
-                    staa      PY
-                    ldaa      #PAGE3
-                    staa      PX
+                    lda       #LIMMED
+                    sta       AMODE
+DOYLI2              lda       #PAGE2
+                    sta       PNORM
+                    sta       PY
+                    lda       #PAGE3
+                    sta       PX
                     jsr       DOGEN
                     rts
 
-;  case BTB:        /* bset, bclr */
-;  case SETCLR: a = bitop(baseop,amode,class);
-;               if(a=0) return(a = 3);
-;               if( amode == INDY )
-;                  emit(PAGE2);
-;                  amode = INDX;
+;*  case BTB:        /* bset, bclr */
+;*  case SETCLR: a = bitop(baseop,amode,class);
+;*               if(a=0) return(a = 3);
+;*               if( amode == INDY )
+;*                  emit(PAGE2);
+;*                  amode = INDX;
 
-DOBTB               equ       *
-DOSET               jsr       BITOP
-                    cmpa      #$00
+DOSET               proc
+                    bsr       BITOP
+                    tsta
                     bne       DOSET1
-                    ldaa      #$3                 ; "illegal bit op"
+                    lda       #3                  ; "illegal bit op"
                     rts
 
-DOSET1              ldaa      AMODE
+DOSET1              lda       AMODE
                     cmpa      #INDY
                     bne       DOSET2
-                    ldaa      #PAGE2
+                    lda       #PAGE2
                     jsr       EMIT
-                    ldaa      #INDX
-                    staa      AMODE
-DOSET2              equ       *
+                    lda       #INDX
+                    sta       AMODE
+DOSET2
 
-;               emit(baseop);
-;               a = assarg();
-;               if(a = 4) return(a);
-;               emit(index offset);
-;               if( amode == INDX )
-;                  Buffptr += 2;      /* skip ,x or ,y */
+;*               emit(baseop);
+;*               a = assarg();
+;*               if(a = 4) return(a);
+;*               emit(index offset);
+;*               if( amode == INDX )
+;*                  Buffptr += 2;      /* skip ,x or ,y */
 
-                    ldaa      BASEOP
+                    lda       BASEOP
                     jsr       EMIT
                     jsr       ASSARG
-                    cmpa      #$04
+                    cmpa      #4
                     bne       DOSET22             ; jump if arg ok
                     rts
 
-DOSET22             ldaa      SHFTREG+1           ; index offset
+DOSET22             lda       SHFTREG+1           ; index offset
                     jsr       EMIT
-                    ldaa      AMODE
+                    lda       AMODE
                     cmpa      #INDX
                     bne       DOSET3
                     jsr       INCBUFF
                     jsr       INCBUFF
-DOSET3              equ       *
+DOSET3
 
-;               a = assarg();
-;               if(a = 4) return(a);
-;               emit(mask);   /* mask */
-;               if( class == SETCLR )
-;                  return;
+;*               a = assarg();
+;*               if(a = 4) return(a);
+;*               emit(mask);   /* mask */
+;*               if( class == SETCLR )
+;*                  return;
 
                     jsr       ASSARG
-                    cmpa      #$04
+                    cmpa      #4
                     bne       DOSET33             ; jump if arg ok
                     rts
 
-DOSET33             ldaa      SHFTREG+1           ; mask
+DOSET33             lda       SHFTREG+1           ; mask
                     jsr       EMIT
-                    ldaa      CLASS
+                    lda       CLASS
                     cmpa      #SETCLR
                     bne       DOSET4
                     clra
                     rts
 
-DOSET4              equ       *
+;*               a = assarg();
+;*               if(a = 4) return(a);
+;*               d = (pc+1) - shftreg;
+;*               if ($7f >= d >= $ff82)
+;*                  return (out of range);
+;*               emit(branch offset);
+;*               return(0);
 
-;               a = assarg();
-;               if(a = 4) return(a);
-;               d = (pc+1) - shftreg;
-;               if ($7f >= d >= $ff82)
-;                  return (out of range);
-;               emit(branch offset);
-;               return(0);
+DOSET4              jsr       ASSARG
+                    cmpa      #4
+                    beq       :AnRTS              ; jump if arg not ok
 
-                    jsr       ASSARG
-                    cmpa      #$04
-                    bne       DOSET5              ; jump if arg ok
-                    rts
-
-DOSET5              ldx       PC                  ; program counter
+                    ldx       PC                  ; program counter
                     inx                           ; point to next inst
                     stx       BRADDR              ; save pc value
                     ldd       SHFTREG             ; get branch address
                     subd      BRADDR              ; calculate offset
-                    cmpd      #$7F
+                    cpd       #$7F
                     bls       DOSET6              ; jump if in range
-                    cmpd      #$FF80
+                    cpd       #$FF80
                     bhs       DOSET6              ; jump if in range
                     clra
                     jsr       EMIT
-                    ldaa      #$09                ; 'out of range'
+                    lda       #9                  ; 'out of range'
                     rts
 
 DOSET6              tba                           ; offset
@@ -2913,54 +2886,54 @@ DOSET6              tba                           ; offset
                     clra
                     rts
 
-
-;**********
+;*******************************************************************************
 ;**   bitop(baseop,amode,class) --- adjust opcode on bit
 ;**       manipulation instructions.  Returns opcode in a
 ;**       or a = 0 if error
-;**********
-; *if( amode == INDX || amode == INDY ) return(op);
-; *if( class == SETCLR ) return(op-8);
-; *else if(class==BTB) return(op-12);
-; *else fatal("bitop");
+;*******************************************************************************
+;*if( amode == INDX || amode == INDY ) return(op);
+;*if( class == SETCLR ) return(op-8);
+;*else if(class==BTB) return(op-12);
+;*else fatal("bitop");
 
-BITOP               equ       *
-                    ldaa      AMODE
-                    ldab      CLASS
+BITOP               proc
+                    lda       AMODE
+                    ldb       CLASS
                     cmpa      #INDX
                     bne       BITOP1
                     rts
 
 BITOP1              cmpa      #INDY
-                    bne       BITOP2              ; jump not indexed
-                    rts
+                    beq       :AnRTS              ; jump indexed
 
-BITOP2              cmpb      #SETCLR
+                    cmpb      #SETCLR
                     bne       BITOP3              ; jump not bset,bclr
-                    ldaa      BASEOP              ; get opcode
+                    lda       BASEOP              ; get opcode
                     suba      #8
-                    staa      BASEOP
+                    sta       BASEOP
                     rts
 
 BITOP3              cmpb      #BTB
                     bne       BITOP4              ; jump not bit branch
-                    ldaa      BASEOP              ; get opcode
+                    lda       BASEOP              ; get opcode
                     suba      #12
-                    staa      BASEOP
+                    sta       BASEOP
                     rts
 
 BITOP4              clra                          ; 0 = fatal bitop
                     rts
 
-;**********
+;*******************************************************************************
 ;**   dogen(baseop,mode,pnorm,px,py) - process
 ;** general addressing modes. Returns a = error #.
-;**********
-; *pnorm = page for normal addressing modes: IMM,DIR,EXT
-; *px = page for INDX addressing
-; *py = page for INDY addressing
-; *switch(amode)
-DOGEN               ldaa      AMODE
+;*******************************************************************************
+;*pnorm = page for normal addressing modes: IMM,DIR,EXT
+;*px = page for INDX addressing
+;*py = page for INDY addressing
+;*switch(amode)
+
+DOGEN               proc
+                    lda       AMODE
                     cmpa      #LIMMED
                     beq       DOGLIM
                     cmpa      #IMMED
@@ -2972,21 +2945,23 @@ DOGEN               ldaa      AMODE
                     cmpa      #OTHER
                     beq       DOGOTH
 
-; *default: error("Unknown Addressing Mode");
+;*default: error("Unknown Addressing Mode");
 
-DOGDEF              ldaa      #$06                ; unknown addre...
+DOGDEF              proc
+                    lda       #6                  ; unknown addre...
                     rts
 
-; *case LIMMED: epage(pnorm);
-;             emit(baseop);
-;             a = assarg();
-;             if(a = 4) return(a);
-;             emit(2 bytes);
-;             return(0);
+;*case LIMMED: epage(pnorm);
+;*             emit(baseop);
+;*             a = assarg();
+;*             if(a = 4) return(a);
+;*             emit(2 bytes);
+;*             return(0);
 
-DOGLIM              ldaa      PNORM
+DOGLIM              proc
+                    lda       PNORM
                     jsr       EPAGE
-DOGLIM1             ldaa      BASEOP
+DOGLIM1             lda       BASEOP
                     jsr       EMIT
                     jsr       ASSARG              ; get next argument
                     cmpa      #$04
@@ -3000,114 +2975,119 @@ DOGLIM2             ldd       SHFTREG
                     clra
                     rts
 
-; *case IMMED: epage(pnorm);
-;            emit(baseop);
-;            a = assarg();
-;            if(a = 4) return(a);
-;            emit(lobyte);
-;            return(0);
+;*case IMMED: epage(pnorm);
+;*            emit(baseop);
+;*            a = assarg();
+;*            if(a = 4) return(a);
+;*            emit(lobyte);
+;*            return(0);
 
-DOGIMM              ldaa      PNORM
+DOGIMM              proc
+                    lda       PNORM
                     jsr       EPAGE
-                    ldaa      BASEOP
+                    lda       BASEOP
                     jsr       EMIT
-                    jsr       ASSARG
+                    bsr       ASSARG
                     cmpa      #$04
                     bne       DOGIMM1             ; jump if arg ok
                     rts
 
-DOGIMM1             ldaa      SHFTREG+1
+DOGIMM1             lda       SHFTREG+1
                     jsr       EMIT
                     clra
                     rts
 
-; *case INDY: epage(py);
-;           a=doindex(op+0x20);
-;           return(a);
+;*case INDY: epage(py);
+;*           a=doindex(op+0x20);
+;*           return(a);
 
-DOGINDY             ldaa      PY
+DOGINDY             proc
+                    lda       PY
                     jsr       EPAGE
-                    ldaa      BASEOP
-                    adda      #$20
-                    staa      BASEOP
-                    jsr       DOINDEX
+                    lda       BASEOP
+                    adda      #32
+                    sta       BASEOP
+                    bsr       DOINDEX
                     rts
 
-; *case INDX: epage(px);
-;           a=doindex(op+0x20);
-;           return(a);
+;*case INDX: epage(px);
+;*           a=doindex(op+0x20);
+;*           return(a);
 
-DOGINDX             ldaa      PX
-                    jsr       EPAGE
-                    ldaa      BASEOP
-                    adda      #$20
-                    staa      BASEOP
-                    jsr       DOINDEX
+DOGINDX             proc
+                    lda       PX
+                    bsr       EPAGE
+                    lda       BASEOP
+                    adda      #32
+                    sta       BASEOP
+                    bsr       DOINDEX
                     rts
 
-; *case OTHER: a = assarg();
-;            if(a = 4) return(a);
-;            epage(pnorm);
-;            if(countu1 <= 2 digits)   /* direct */
-;               emit(op+0x10);
-;               emit(lobyte(Result));
-;               return(0);
-;            else    emit(op+0x30);    /* extended */
-;               eword(Result);
-;               return(0)
+;*case OTHER: a = assarg();
+;*            if(a = 4) return(a);
+;*            epage(pnorm);
+;*            if(countu1 <= 2 digits)   /* direct */
+;*               emit(op+0x10);
+;*               emit(lobyte(Result));
+;*               return(0);
+;*            else    emit(op+0x30);    /* extended */
+;*               eword(Result);
+;*               return(0)
 
-DOGOTH              jsr       ASSARG
-                    cmpa      #$04
+DOGOTH              proc
+                    bsr       ASSARG
+                    cmpa      #4
                     bne       DOGOTH0             ; jump if arg ok
                     rts
 
-DOGOTH0             ldaa      PNORM
-                    jsr       EPAGE
-                    ldaa      COUNT
-                    cmpa      #$2
+DOGOTH0             lda       PNORM
+                    bsr       EPAGE
+                    lda       COUNT
+                    cmpa      #2
                     bgt       DOGOTH1
-                    ldaa      BASEOP
-                    adda      #$10                ; direct mode opcode
-                    jsr       EMIT
-                    ldaa      SHFTREG+1
-                    jsr       EMIT
+                    lda       BASEOP
+                    adda      #16                 ; direct mode opcode
+                    bsr       EMIT
+                    lda       SHFTREG+1
+                    bsr       EMIT
                     clra
                     rts
 
-DOGOTH1             ldaa      BASEOP
-                    adda      #$30                ; extended mode opcode
-                    jsr       EMIT
+DOGOTH1             lda       BASEOP
+                    adda      #48                 ; extended mode opcode
+                    bsr       EMIT
                     ldd       SHFTREG
-                    jsr       EMIT
+                    bsr       EMIT
                     tba
-                    jsr       EMIT
+                    bsr       EMIT
                     clra
                     rts
 
-;**********
+;*******************************************************************************
 ;**  doindex(op) --- handle all wierd stuff for
 ;**   indexed addressing. Returns a = error number.
-;**********
-; *emit(baseop);
-; *a=assarg();
-; *if(a = 4) return(a);
-; *if( a != ',' ) return("Syntax");
-; *buffptr++
-; *a=readbuff()
-; *if( a != 'x' &&  != 'y') warn("Ind Addr Assumed");
-; *emit(lobyte);
-; *return(0);
+;*******************************************************************************
+;*emit(baseop);
+;*a=assarg();
+;*if(a = 4) return(a);
+;*if( a != ',' ) return("Syntax");
+;*buffptr++
+;*a=readbuff()
+;*if( a != 'x' &&  != 'y') warn("Ind Addr Assumed");
+;*emit(lobyte);
+;*return(0);
 
-DOINDEX             ldaa      BASEOP
-                    jsr       EMIT
-                    jsr       ASSARG
-                    cmpa      #$04
+DOINDEX             proc
+                    lda       BASEOP
+                    bsr       EMIT
+                    bsr       ASSARG
+                    cmpa      #4
                     bne       DOINDX0             ; jump if arg ok
                     rts
 
 DOINDX0             cmpa      #','
                     beq       DOINDX1
-                    ldaa      #$08                ; "syntax error"
+                    lda       #8                  ; "syntax error"
                     rts
 
 DOINDX1             jsr       INCBUFF
@@ -3118,20 +3098,21 @@ DOINDX1             jsr       INCBUFF
                     beq       DOINDX2
                     ldx       MSGA7               ; "index addr assumed"
                     jsr       OUTSTRG
-DOINDX2             ldaa      SHFTREG+1
-                    jsr       EMIT
+DOINDX2             lda       SHFTREG+1
+                    bsr       EMIT
                     clra
                     rts
 
-;**********
+;*******************************************************************************
 ;**   assarg(); - get argument.  Returns a = 4 if bad
 ;** argument, else a = first non hex char.
-;**********
-; *a = buffarg()
-; *if(asschk(aa) && countu1 != 0) return(a);
-; *return(bad argument);
+;*******************************************************************************
+;*a = buffarg()
+;*if(asschk(aa) && countu1 != 0) return(a);
+;*return(bad argument);
 
-ASSARG              jsr       BUFFARG
+ASSARG              proc
+                    jsr       BUFFARG
                     jsr       ASSCHEK             ; check for command
                     beq       ASSARG1             ; jump if ok
                     jsr       WCHEK               ; check for whitespace
@@ -3140,29 +3121,31 @@ ASSARG1             tst       COUNT
                     beq       ASSARG2             ; jump if no argument
                     rts
 
-ASSARG2             ldaa      #$04                ; bad argument
+ASSARG2             lda       #4                  ; bad argument
                     rts
 
-;**********
+;*******************************************************************************
 ;**  epage(a) --- emit page prebyte
-;**********
-; *if( a != PAGE1 ) emit(a);
+;*******************************************************************************
+;*if( a != PAGE1 ) emit(a);
 
-EPAGE               cmpa      #PAGE1
-                    beq       EPAGRT              ; jump if page 1
-                    jsr       EMIT
-EPAGRT              rts
+EPAGE               proc
+                    cmpa      #PAGE1
+                    beq       :AnRTS              ; jump if page 1
 
-;**********
-;   emit(a) --- emit contents of a
-;**********
-EMIT                ldx       PC
+;*******************************************************************************
+;*   emit(a) --- emit contents of a
+;*******************************************************************************
+
+EMIT                proc
+                    ldx       PC
                     jsr       WRITE               ; write a to x
                     jsr       OUT1BSP
                     stx       PC
                     rts
 
-; *Mnemonic table for hc11 line assembler
+;*Mnemonic table for hc11 line assembler
+
 NULL                equ       $0                  ; nothing
 INH                 equ       $1                  ; inherent
 P2INH               equ       $2                  ; page 2 inherent
@@ -3182,486 +3165,189 @@ CPD                 equ       $15                 ; compare d
 BTBD                equ       $16                 ; bit test and branch direct
 SETCLRD             equ       $17                 ; bit set or clear direct
 
-;**********
-;   mnetabl - includes all '11 mnemonics, base opcodes,
-; and type of instruction.  The assembler search routine
-; *depends on 4 characters for each mnemonic so that 3 char
-; *mnemonics are extended with a space and 5 char mnemonics
-; *are truncated.
-;**********
+;*******************************************************************************
+;* mnetabl - includes all '11 mnemonics, base opcodes,
+;* and type of instruction.  The assembler search routine
+;* depends on 4 characters for each mnemonic so that 3 char
+;* mnemonics are extended with a space and 5 char mnemonics
+;* are truncated.
+;*******************************************************************************
 
-MNETABL             equ       *
-                    fcc       'ABA '              ; Mnemonic
-                    fcb       $1B                 ; Base opcode
-                    fcb       INH                 ; Class
-                    fcc       'ABX '
-                    fcb       $3A
-                    fcb       INH
-                    fcc       'ABY '
-                    fcb       $3A
-                    fcb       P2INH
-                    fcc       'ADCA'
-                    fcb       $89
-                    fcb       GEN
-                    fcc       'ADCB'
-                    fcb       $C9
-                    fcb       GEN
-                    fcc       'ADDA'
-                    fcb       $8B
-                    fcb       GEN
-                    fcc       'ADDB'
-                    fcb       $CB
-                    fcb       GEN
-                    fcc       'ADDD'
-                    fcb       $C3
-                    fcb       LIMM
-                    fcc       'ANDA'
-                    fcb       $84
-                    fcb       GEN
-                    fcc       'ANDB'
-                    fcb       $C4
-                    fcb       GEN
-                    fcc       'ASL '
-                    fcb       $68
-                    fcb       GRP2
-                    fcc       'ASLA'
-                    fcb       $48
-                    fcb       INH
-                    fcc       'ASLB'
-                    fcb       $58
-                    fcb       INH
-                    fcc       'ASLD'
-                    fcb       $05
-                    fcb       INH
-                    fcc       'ASR '
-                    fcb       $67
-                    fcb       GRP2
-                    fcc       'ASRA'
-                    fcb       $47
-                    fcb       INH
-                    fcc       'ASRB'
-                    fcb       $57
-                    fcb       INH
-                    fcc       'BCC '
-                    fcb       $24
-                    fcb       REL
-                    fcc       'BCLR'
-                    fcb       $1D
-                    fcb       SETCLR
-                    fcc       'BCS '
-                    fcb       $25
-                    fcb       REL
-                    fcc       'BEQ '
-                    fcb       $27
-                    fcb       REL
-                    fcc       'BGE '
-                    fcb       $2C
-                    fcb       REL
-                    fcc       'BGT '
-                    fcb       $2E
-                    fcb       REL
-                    fcc       'BHI '
-                    fcb       $22
-                    fcb       REL
-                    fcc       'BHS '
-                    fcb       $24
-                    fcb       REL
-                    fcc       'BITA'
-                    fcb       $85
-                    fcb       GEN
-                    fcc       'BITB'
-                    fcb       $C5
-                    fcb       GEN
-                    fcc       'BLE '
-                    fcb       $2F
-                    fcb       REL
-                    fcc       'BLO '
-                    fcb       $25
-                    fcb       REL
-                    fcc       'BLS '
-                    fcb       $23
-                    fcb       REL
-                    fcc       'BLT '
-                    fcb       $2D
-                    fcb       REL
-                    fcc       'BMI '
-                    fcb       $2B
-                    fcb       REL
-                    fcc       'BNE '
-                    fcb       $26
-                    fcb       REL
-                    fcc       'BPL '
-                    fcb       $2A
-                    fcb       REL
-                    fcc       'BRA '
-                    fcb       $20
-                    fcb       REL
-                    fcc       'BRCL'              ; (BRCLR)
-                    fcb       $1F
-                    fcb       BTB
-                    fcc       'BRN '
-                    fcb       $21
-                    fcb       REL
-                    fcc       'BRSE'              ; (BRSET)
-                    fcb       $1E
-                    fcb       BTB
-                    fcc       'BSET'
-                    fcb       $1C
-                    fcb       SETCLR
-                    fcc       'BSR '
-                    fcb       $8D
-                    fcb       REL
-                    fcc       'BVC '
-                    fcb       $28
-                    fcb       REL
-                    fcc       'BVS '
-                    fcb       $29
-                    fcb       REL
-                    fcc       'CBA '
-                    fcb       $11
-                    fcb       INH
-                    fcc       'CLC '
-                    fcb       $0C
-                    fcb       INH
-                    fcc       'CLI '
-                    fcb       $0E
-                    fcb       INH
-                    fcc       'CLR '
-                    fcb       $6F
-                    fcb       GRP2
-                    fcc       'CLRA'
-                    fcb       $4F
-                    fcb       INH
-                    fcc       'CLRB'
-                    fcb       $5F
-                    fcb       INH
-                    fcc       'CLV '
-                    fcb       $0A
-                    fcb       INH
-                    fcc       'CMPA'
-                    fcb       $81
-                    fcb       GEN
-                    fcc       'CMPB'
-                    fcb       $C1
-                    fcb       GEN
-                    fcc       'COM '
-                    fcb       $63
-                    fcb       GRP2
-                    fcc       'COMA'
-                    fcb       $43
-                    fcb       INH
-                    fcc       'COMB'
-                    fcb       $53
-                    fcb       INH
-                    fcc       'CPD '
-                    fcb       $83
-                    fcb       CPD
-                    fcc       'CPX '
-                    fcb       $8C
-                    fcb       XLIMM
-                    fcc       'CPY '
-                    fcb       $8C
-                    fcb       YLIMM
-                    fcc       'DAA '
-                    fcb       $19
-                    fcb       INH
-                    fcc       'DEC '
-                    fcb       $6A
-                    fcb       GRP2
-                    fcc       'DECA'
-                    fcb       $4A
-                    fcb       INH
-                    fcc       'DECB'
-                    fcb       $5A
-                    fcb       INH
-                    fcc       'DES '
-                    fcb       $34
-                    fcb       INH
-                    fcc       'DEX '
-                    fcb       $09
-                    fcb       INH
-                    fcc       'DEY '
-                    fcb       $09
-                    fcb       P2INH
-                    fcc       'EORA'
-                    fcb       $88
-                    fcb       GEN
-                    fcc       'EORB'
-                    fcb       $C8
-                    fcb       GEN
-                    fcc       'FDIV'
-                    fcb       $03
-                    fcb       INH
-                    fcc       'IDIV'
-                    fcb       $02
-                    fcb       INH
-                    fcc       'INC '
-                    fcb       $6C
-                    fcb       GRP2
-                    fcc       'INCA'
-                    fcb       $4C
-                    fcb       INH
-                    fcc       'INCB'
-                    fcb       $5C
-                    fcb       INH
-                    fcc       'INS '
-                    fcb       $31
-                    fcb       INH
-                    fcc       'INX '
-                    fcb       $08
-                    fcb       INH
-                    fcc       'INY '
-                    fcb       $08
-                    fcb       P2INH
-                    fcc       'JMP '
-                    fcb       $6E
-                    fcb       GRP2
-                    fcc       'JSR '
-                    fcb       $8D
-                    fcb       NIMM
-                    fcc       'LDAA'
-                    fcb       $86
-                    fcb       GEN
-                    fcc       'LDAB'
-                    fcb       $C6
-                    fcb       GEN
-                    fcc       'LDD '
-                    fcb       $CC
-                    fcb       LIMM
-                    fcc       'LDS '
-                    fcb       $8E
-                    fcb       LIMM
-                    fcc       'LDX '
-                    fcb       $CE
-                    fcb       XLIMM
-                    fcc       'LDY '
-                    fcb       $CE
-                    fcb       YLIMM
-                    fcc       'LSL '
-                    fcb       $68
-                    fcb       GRP2
-                    fcc       'LSLA'
-                    fcb       $48
-                    fcb       INH
-                    fcc       'LSLB'
-                    fcb       $58
-                    fcb       INH
-                    fcc       'LSLD'
-                    fcb       $05
-                    fcb       INH
-                    fcc       'LSR '
-                    fcb       $64
-                    fcb       GRP2
-                    fcc       'LSRA'
-                    fcb       $44
-                    fcb       INH
-                    fcc       'LSRB'
-                    fcb       $54
-                    fcb       INH
-                    fcc       'LSRD'
-                    fcb       $04
-                    fcb       INH
-                    fcc       'MUL '
-                    fcb       $3D
-                    fcb       INH
-                    fcc       'NEG '
-                    fcb       $60
-                    fcb       GRP2
-                    fcc       'NEGA'
-                    fcb       $40
-                    fcb       INH
-                    fcc       'NEGB'
-                    fcb       $50
-                    fcb       INH
-                    fcc       'NOP '
-                    fcb       $01
-                    fcb       INH
-                    fcc       'ORAA'
-                    fcb       $8A
-                    fcb       GEN
-                    fcc       'ORAB'
-                    fcb       $CA
-                    fcb       GEN
-                    fcc       'PSHA'
-                    fcb       $36
-                    fcb       INH
-                    fcc       'PSHB'
-                    fcb       $37
-                    fcb       INH
-                    fcc       'PSHX'
-                    fcb       $3C
-                    fcb       INH
-                    fcc       'PSHY'
-                    fcb       $3C
-                    fcb       P2INH
-                    fcc       'PULA'
-                    fcb       $32
-                    fcb       INH
-                    fcc       'PULB'
-                    fcb       $33
-                    fcb       INH
-                    fcc       'PULX'
-                    fcb       $38
-                    fcb       INH
-                    fcc       'PULY'
-                    fcb       $38
-                    fcb       P2INH
-                    fcc       'ROL '
-                    fcb       $69
-                    fcb       GRP2
-                    fcc       'ROLA'
-                    fcb       $49
-                    fcb       INH
-                    fcc       'ROLB'
-                    fcb       $59
-                    fcb       INH
-                    fcc       'ROR '
-                    fcb       $66
-                    fcb       GRP2
-                    fcc       'RORA'
-                    fcb       $46
-                    fcb       INH
-                    fcc       'RORB'
-                    fcb       $56
-                    fcb       INH
-                    fcc       'RTI '
-                    fcb       $3B
-                    fcb       INH
-                    fcc       'RTS '
-                    fcb       $39
-                    fcb       INH
-                    fcc       'SBA '
-                    fcb       $10
-                    fcb       INH
-                    fcc       'SBCA'
-                    fcb       $82
-                    fcb       GEN
-                    fcc       'SBCB'
-                    fcb       $C2
-                    fcb       GEN
-                    fcc       'SEC '
-                    fcb       $0D
-                    fcb       INH
-                    fcc       'SEI '
-                    fcb       $0F
-                    fcb       INH
-                    fcc       'SEV '
-                    fcb       $0B
-                    fcb       INH
-                    fcc       'STAA'
-                    fcb       $87
-                    fcb       NIMM
-                    fcc       'STAB'
-                    fcb       $C7
-                    fcb       NIMM
-                    fcc       'STD '
-                    fcb       $CD
-                    fcb       NIMM
-                    fcc       'STOP'
-                    fcb       $CF
-                    fcb       INH
-                    fcc       'STS '
-                    fcb       $8F
-                    fcb       NIMM
-                    fcc       'STX '
-                    fcb       $CF
-                    fcb       XNIMM
-                    fcc       'STY '
-                    fcb       $CF
-                    fcb       YNIMM
-                    fcc       'SUBA'
-                    fcb       $80
-                    fcb       GEN
-                    fcc       'SUBB'
-                    fcb       $C0
-                    fcb       GEN
-                    fcc       'SUBD'
-                    fcb       $83
-                    fcb       LIMM
-                    fcc       'SWI '
-                    fcb       $3F
-                    fcb       INH
-                    fcc       'TAB '
-                    fcb       $16
-                    fcb       INH
-                    fcc       'TAP '
-                    fcb       $06
-                    fcb       INH
-                    fcc       'TBA '
-                    fcb       $17
-                    fcb       INH
-                    fcc       'TPA '
-                    fcb       $07
-                    fcb       INH
-                    fcc       'TEST'
-                    fcb       $00
-                    fcb       INH
-                    fcc       'TST '
-                    fcb       $6D
-                    fcb       GRP2
-                    fcc       'TSTA'
-                    fcb       $4D
-                    fcb       INH
-                    fcc       'TSTB'
-                    fcb       $5D
-                    fcb       INH
-                    fcc       'TSX '
-                    fcb       $30
-                    fcb       INH
-                    fcc       'TSY '
-                    fcb       $30
-                    fcb       P2INH
-                    fcc       'TXS '
-                    fcb       $35
-                    fcb       INH
-                    fcc       'TYS '
-                    fcb       $35
-                    fcb       P2INH
-                    fcc       'WAI '
-                    fcb       $3E
-                    fcb       INH
-                    fcc       'XGDX'
-                    fcb       $8F
-                    fcb       INH
-                    fcc       'XGDY'
-                    fcb       $8F
-                    fcb       P2INH
-                    fcc       'BRSE'              ; bit direct modes for
-                    fcb       $12                 ; disassembler.
-                    fcb       BTBD
-                    fcc       'BRCL'
-                    fcb       $13
-                    fcb       BTBD
-                    fcc       'BSET'
-                    fcb       $14
-                    fcb       SETCLRD
-                    fcc       'BCLR'
-                    fcb       $15
-                    fcb       SETCLRD
+MNETABL             fcc       'ABA ',$1B,INH      ; Mnemonic, Base opcode, Class
+                    fcc       'ABX ',$3A,INH
+                    fcc       'ABY ',$3A,P2INH
+                    fcc       'ADCA',$89,GEN
+                    fcc       'ADCB',$C9,GEN
+                    fcc       'ADDA',$8B,GEN
+                    fcc       'ADDB',$CB,GEN
+                    fcc       'ADDD',$C3,LIMM
+                    fcc       'ANDA',$84,GEN
+                    fcc       'ANDB',$C4,GEN
+                    fcc       'ASL ',$68,GRP2
+                    fcc       'ASLA',$48,INH
+                    fcc       'ASLB',$58,INH
+                    fcc       'ASLD',$05,INH
+                    fcc       'ASR ',$67,GRP2
+                    fcc       'ASRA',$47,INH
+                    fcc       'ASRB',$57,INH
+                    fcc       'BCC ',$24,REL
+                    fcc       'BCLR',$1D,SETCLR
+                    fcc       'BCS ',$25,REL
+                    fcc       'BEQ ',$27,REL
+                    fcc       'BGE ',$2C,REL
+                    fcc       'BGT ',$2E,REL
+                    fcc       'BHI ',$22,REL
+                    fcc       'BHS ',$24,REL
+                    fcc       'BITA',$85,GEN
+                    fcc       'BITB',$C5,GEN
+                    fcc       'BLE ',$2F,REL
+                    fcc       'BLO ',$25,REL
+                    fcc       'BLS ',$23,REL
+                    fcc       'BLT ',$2D,REL
+                    fcc       'BMI ',$2B,REL
+                    fcc       'BNE ',$26,REL
+                    fcc       'BPL ',$2A,REL
+                    fcc       'BRA ',$20,REL
+                    fcc       'BRCL',$1F,BTB      ; (BRCLR)
+                    fcc       'BRN ',$21,REL
+                    fcc       'BRSE',$1E,BTB      ; (BRSET)
+                    fcc       'BSET',$1C,SETCLR
+                    fcc       'BSR ',$8D,REL
+                    fcc       'BVC ',$28,REL
+                    fcc       'BVS ',$29,REL
+                    fcc       'CBA ',$11,INH
+                    fcc       'CLC ',$0C,INH
+                    fcc       'CLI ',$0E,INH
+                    fcc       'CLR ',$6F,GRP2
+                    fcc       'CLRA',$4F,INH
+                    fcc       'CLRB',$5F,INH
+                    fcc       'CLV ',$0A,INH
+                    fcc       'CMPA',$81,GEN
+                    fcc       'CMPB',$C1,GEN
+                    fcc       'COM ',$63,GRP2
+                    fcc       'COMA',$43,INH
+                    fcc       'COMB',$53,INH
+                    fcc       'CPD ',$83,CPD
+                    fcc       'CPX ',$8C,XLIMM
+                    fcc       'CPY ',$8C,YLIMM
+                    fcc       'DAA ',$19,INH
+                    fcc       'DEC ',$6A,GRP2
+                    fcc       'DECA',$4A,INH
+                    fcc       'DECB',$5A,INH
+                    fcc       'DES ',$34,INH
+                    fcc       'DEX ',$09,INH
+                    fcc       'DEY ',$09,P2INH
+                    fcc       'EORA',$88,GEN
+                    fcc       'EORB',$C8,GEN
+                    fcc       'FDIV',$03,INH
+                    fcc       'IDIV',$02,INH
+                    fcc       'INC ',$6C,GRP2
+                    fcc       'INCA',$4C,INH
+                    fcc       'INCB',$5C,INH
+                    fcc       'INS ',$31,INH
+                    fcc       'INX ',$08,INH
+                    fcc       'INY ',$08,P2INH
+                    fcc       'JMP ',$6E,GRP2
+                    fcc       'JSR ',$8D,NIMM
+                    fcc       'LDAA',$86,GEN
+                    fcc       'LDAB',$C6,GEN
+                    fcc       'LDD ',$CC,LIMM
+                    fcc       'LDS ',$8E,LIMM
+                    fcc       'LDX ',$CE,XLIMM
+                    fcc       'LDY ',$CE,YLIMM
+                    fcc       'LSL ',$68,GRP2
+                    fcc       'LSLA',$48,INH
+                    fcc       'LSLB',$58,INH
+                    fcc       'LSLD',$05,INH
+                    fcc       'LSR ',$64,GRP2
+                    fcc       'LSRA',$44,INH
+                    fcc       'LSRB',$54,INH
+                    fcc       'LSRD',$04,INH
+                    fcc       'MUL ',$3D,INH
+                    fcc       'NEG ',$60,GRP2
+                    fcc       'NEGA',$40,INH
+                    fcc       'NEGB',$50,INH
+                    fcc       'NOP ',$01,INH
+                    fcc       'ORAA',$8A,GEN
+                    fcc       'ORAB',$CA,GEN
+                    fcc       'PSHA',$36,INH
+                    fcc       'PSHB',$37,INH
+                    fcc       'PSHX',$3C,INH
+                    fcc       'PSHY',$3C,P2INH
+                    fcc       'PULA',$32,INH
+                    fcc       'PULB',$33,INH
+                    fcc       'PULX',$38,INH
+                    fcc       'PULY',$38,P2INH
+                    fcc       'ROL ',$69,GRP2
+                    fcc       'ROLA',$49,INH
+                    fcc       'ROLB',$59,INH
+                    fcc       'ROR ',$66,GRP2
+                    fcc       'RORA',$46,INH
+                    fcc       'RORB',$56,INH
+                    fcc       'RTI ',$3B,INH
+                    fcc       'RTS ',$39,INH
+                    fcc       'SBA ',$10,INH
+                    fcc       'SBCA',$82,GEN
+                    fcc       'SBCB',$C2,GEN
+                    fcc       'SEC ',$0D,INH
+                    fcc       'SEI ',$0F,INH
+                    fcc       'SEV ',$0B,INH
+                    fcc       'STAA',$87,NIMM
+                    fcc       'STAB',$C7,NIMM
+                    fcc       'STD ',$CD,NIMM
+                    fcc       'STOP',$CF,INH
+                    fcc       'STS ',$8F,NIMM
+                    fcc       'STX ',$CF,XNIMM
+                    fcc       'STY ',$CF,YNIMM
+                    fcc       'SUBA',$80,GEN
+                    fcc       'SUBB',$C0,GEN
+                    fcc       'SUBD',$83,LIMM
+                    fcc       'SWI ',$3F,INH
+                    fcc       'TAB ',$16,INH
+                    fcc       'TAP ',$06,INH
+                    fcc       'TBA ',$17,INH
+                    fcc       'TPA ',$07,INH
+                    fcc       'TEST',$00,INH
+                    fcc       'TST ',$6D,GRP2
+                    fcc       'TSTA',$4D,INH
+                    fcc       'TSTB',$5D,INH
+                    fcc       'TSX ',$30,INH
+                    fcc       'TSY ',$30,P2INH
+                    fcc       'TXS ',$35,INH
+                    fcc       'TYS ',$35,P2INH
+                    fcc       'WAI ',$3E,INH
+                    fcc       'XGDX',$8F,INH
+                    fcc       'XGDY',$8F,P2INH
+                    fcc       'BRSE',$12,BTBD     ; bit direct modes for disassembler.
+                    fcc       'BRCL',$13,BTBD
+                    fcc       'BSET',$14,SETCLRD
+                    fcc       'BCLR',$15,SETCLRD
+
                     fcb       EOT                 ; End of table
 
-;**********************************************
-PG1                 equ       $0
-PG2                 equ       $1
-PG3                 equ       $2
-PG4                 equ       $3
+;*******************************************************************************
 
-;******************
-; *disassem() - disassemble the opcode.
-;******************
-; *(check for page prebyte)
-; *baseop=pc[0];
-; *pnorm=PG1;
-; *if(baseop==$18) pnorm=PG2;
-; *if(baseop==$1A) pnorm=PG3;
-; *if(baseop==$CD) pnorm=PG4;
-; *if(pnorm != PG1) dispc=pc+1;
-; *else dispc=pc; (dispc points to next byte)
+PG1                 equ       0
+PG2                 equ       1
+PG3                 equ       2
+PG4                 equ       3
 
-DISASSM             equ       *
+;*******************************************************************************
+;*disassem() - disassemble the opcode.
+;*******************************************************************************
+;*(check for page prebyte)
+;*baseop=pc[0];
+;*pnorm=PG1;
+;*if(baseop==$18) pnorm=PG2;
+;*if(baseop==$1A) pnorm=PG3;
+;*if(baseop==$CD) pnorm=PG4;
+;*if(pnorm != PG1) dispc=pc+1;
+;*else dispc=pc; (dispc points to next byte)
+
+DISASSM             proc
                     ldx       PC                  ; address
-                    ldaa      0,X                 ; opcode
-                    ldab      #PG1
+                    lda       ,x                  ; opcode
+                    ldb       #PG1
                     cmpa      #$18
                     beq       DISP2               ; jump if page2
                     cmpa      #$1A
@@ -3673,16 +3359,16 @@ DISP3               incb
 DISP2               incb
                     inx
 DISP1               stx       DISPC               ; point to opcode
-                    stab      PNORM               ; save page
+                    stb       PNORM               ; save page
 
-; *If(opcode == ($00-$5F or $8D or $8F or $CF))
-;  if(pnorm == (PG3 or PG4))
-;      disillop(); return();
-;  b=disrch(opcode,NULL);
-;  if(b==0) disillop(); return();
+;*If(opcode == ($00-$5F or $8D or $8F or $CF))
+;*  if(pnorm == (PG3 or PG4))
+;*      disillop(); return();
+;*  b=disrch(opcode,NULL);
+;*  if(b==0) disillop(); return();
 
-                    ldaa      0,X                 ; get current opcode
-                    staa      BASEOP
+                    lda       ,x                  ; get current opcode
+                    sta       BASEOP
                     inx
                     stx       DISPC               ; point to next byte
                     cmpa      #$5F
@@ -3695,13 +3381,13 @@ DISP1               stx       DISPC               ; point to opcode
                     beq       DIS1                ; jump if stop
                     jmp       DISGRP              ; try next part of map
 
-DIS1                ldab      PNORM
+DIS1                ldb       PNORM
                     cmpb      #PG3
                     blo       DIS2                ; jump if page 1 or 2
                     jsr       DISILLOP            ; "illegal opcode"
                     rts
 
-DIS2                ldab      BASEOP              ; opcode
+DIS2                ldb       BASEOP              ; opcode
                     clrb                          ; class=null
                     jsr       DISRCH
                     tstb
@@ -3709,38 +3395,39 @@ DIS2                ldab      BASEOP              ; opcode
                     jsr       DISILLOP            ; "illegal opcode"
                     rts
 
-;   if(opcode==$8D) dissrch(opcode,REL);
-;   if(opcode==($8F or $CF)) disrch(opcode,INH);
+;*   if(opcode==$8D) dissrch(opcode,REL);
+;*   if(opcode==($8F or $CF)) disrch(opcode,INH);
 
-DISPEC              ldaa      BASEOP
+DISPEC              proc
+                    lda       BASEOP
                     cmpa      #$8D
                     bne       DISPEC1
-                    ldab      #REL
+                    ldb       #REL
                     bra       DISPEC3             ; look for BSR opcode
 
 DISPEC1             cmpa      #$8F
                     beq       DISPEC2             ; jump if XGDX opcode
                     cmpa      #$CF
                     bne       DISINH              ; jump not STOP opcode
-DISPEC2             ldab      #INH
+DISPEC2             ldb       #INH
 DISPEC3             jsr       DISRCH              ; find other entry in table
 
-;   if(class==INH)           /* INH */
-;      if(pnorm==PG2)
-;         b=disrch(baseop,P2INH);
-;         if(b==0) disillop(); return();
-;      prntmne();
-;      return();
+;*   if(class==INH)           /* INH */
+;*      if(pnorm==PG2)
+;*         b=disrch(baseop,P2INH);
+;*         if(b==0) disillop(); return();
+;*      prntmne();
+;*      return();
 
-DISINH              equ       *
-                    ldab      CLASS
+DISINH              proc
+                    ldb       CLASS
                     cmpb      #INH
                     bne       DISREL              ; jump if not inherent
-                    ldab      PNORM
+                    ldb       PNORM
                     cmpb      #PG1
                     beq       DISINH1             ; jump if page1
-                    ldaa      BASEOP              ; get opcode
-                    ldab      #P2INH              ; class=p2inh
+                    lda       BASEOP              ; get opcode
+                    ldb       #P2INH              ; class=p2inh
                     jsr       DISRCH
                     tstb
                     bne       DISINH1             ; jump if found
@@ -3750,15 +3437,15 @@ DISINH              equ       *
 DISINH1             jsr       PRNTMNE
                     rts
 
-;   elseif(class=REL)       /* REL */
-;      if(pnorm != PG1)
-;         disillop(); return();
-;      prntmne();
-;      disrelad();
-;      return();
+;*   elseif(class=REL)       /* REL */
+;*      if(pnorm != PG1)
+;*         disillop(); return();
+;*      prntmne();
+;*      disrelad();
+;*      return();
 
-DISREL              equ       *
-                    ldab      CLASS
+DISREL              proc
+                    ldb       CLASS
                     cmpb      #REL
                     bne       DISBTD
                     tst       PNORM
@@ -3770,24 +3457,24 @@ DISREL1             jsr       PRNTMNE             ; output mnemonic
                     jsr       DISRELAD            ; compute relative address
                     rts
 
-;   else           /* SETCLR,SETCLRD,BTB,BTBD */
-;      if(class == (SETCLRD or BTBD))
-;         if(pnorm != PG1)
-;            disillop(); return();   /* illop */
-;         prntmne();           /* direct */
-;         disdir();           /* output $byte */
-;      else (class == (SETCLR or BTB))
-;         prntmne();           /* indexed */
-;         disindx();
-;      outspac();
-;      disdir();
-;      outspac();
-;      if(class == (BTB or BTBD))
-;         disrelad();
-;   return();
+;*   else           /* SETCLR,SETCLRD,BTB,BTBD */
+;*      if(class == (SETCLRD or BTBD))
+;*         if(pnorm != PG1)
+;*            disillop(); return();   /* illop */
+;*         prntmne();           /* direct */
+;*         disdir();           /* output $byte */
+;*      else (class == (SETCLR or BTB))
+;*         prntmne();           /* indexed */
+;*         disindx();
+;*      outspac();
+;*      disdir();
+;*      outspac();
+;*      if(class == (BTB or BTBD))
+;*         disrelad();
+;*   return();
 
-DISBTD              equ       *
-                    ldab      CLASS
+DISBTD              proc
+                    ldb       CLASS
                     cmpb      #SETCLRD
                     beq       DISBTD1
                     cmpb      #BTBD
@@ -3801,38 +3488,37 @@ DISBTD2             jsr       PRNTMNE
                     jsr       DISDIR              ; operand(direct)
                     bra       DISBIT1
 
-DISBIT              equ       *
-                    jsr       PRNTMNE
+DISBIT              jsr       PRNTMNE
                     jsr       DISINDX             ; operand(indexed)
 DISBIT1             jsr       OUTSPAC
                     jsr       DISDIR              ; mask
-                    ldab      CLASS
+                    ldb       CLASS
                     cmpb      #BTB
                     beq       DISBIT2             ; jump if btb
                     cmpb      #BTBD
-                    bne       DISBIT3             ; jump if not bit branch
+                    bne       :AnRTS              ; jump if not bit branch
 DISBIT2             jsr       DISRELAD            ; relative address
-DISBIT3             rts
+                    rts
 
 
-; *Elseif($60 <= opcode <= $7F)  /*  GRP2 */
-;   if(pnorm == (PG3 or PG4))
-;      disillop(); return();
-;   if((pnorm==PG2) and (opcode != $6x))
-;      disillop(); return();
-;   b=disrch(baseop & $6F,NULL);
-;   if(b==0) disillop(); return();
-;   prntmne();
-;   if(opcode == $6x)
-;      disindx();
-;   else
-;      disext();
-;   return();
+;*Elseif($60 <= opcode <= $7F)  /*  GRP2 */
+;*   if(pnorm == (PG3 or PG4))
+;*      disillop(); return();
+;*   if((pnorm==PG2) and (opcode != $6x))
+;*      disillop(); return();
+;*   b=disrch(baseop & $6F,NULL);
+;*   if(b==0) disillop(); return();
+;*   prntmne();
+;*   if(opcode == $6x)
+;*      disindx();
+;*   else
+;*      disext();
+;*   return();
 
-DISGRP              equ       *
+DISGRP              proc
                     cmpa      #$7F                ; a=opcode
                     bhi       DISNEXT             ; try next part of map
-                    ldab      PNORM
+                    ldb       PNORM
                     cmpb      #PG3
                     blo       DISGRP2             ; jump if page 1 or 2
                     jsr       DISILLOP            ; "illegal opcode"
@@ -3847,7 +3533,7 @@ DISGRP2             anda      #$6F                ; mask bit 4
                     rts
 
 DISGRP3             jsr       PRNTMNE
-                    ldaa      BASEOP              ; get opcode
+                    lda       BASEOP              ; get opcode
                     anda      #$F0
                     cmpa      #$60
                     bne       DISGRP4             ; jump if not 6x
@@ -3857,13 +3543,13 @@ DISGRP3             jsr       PRNTMNE
 DISGRP4             jsr       DISEXT              ; operand(extended)
                     rts
 
-; *Else  ($80 <= opcode <= $FF)
-;   if(opcode == ($87 or $C7))
-;      disillop(); return();
-;   b=disrch(opcode&$CF,NULL);
-;   if(b==0) disillop(); return();
+;*Else  ($80 <= opcode <= $FF)
+;*   if(opcode == ($87 or $C7))
+;*      disillop(); return();
+;*   b=disrch(opcode&$CF,NULL);
+;*   if(b==0) disillop(); return();
 
-DISNEXT             equ       *
+DISNEXT             proc
                     cmpa      #$87                ; a=opcode
                     beq       DISNEX1
                     cmpa      #$C7
@@ -3879,70 +3565,73 @@ DISNEX2             anda      #$CF
                     jsr       DISILLOP            ; "illegal opcode"
                     rts
 
-;   if(opcode&$CF==$8D) disrch(baseop,NIMM; (jsr)
-;   if(opcode&$CF==$8F) disrch(baseop,NIMM; (sts)
-;   if(opcode&$CF==$CF) disrch(baseop,XNIMM; (stx)
-;   if(opcode&$CF==$83) disrch(baseop,LIMM); (subd)
+;*   if(opcode&$CF==$8D) disrch(baseop,NIMM; (jsr)
+;*   if(opcode&$CF==$8F) disrch(baseop,NIMM; (sts)
+;*   if(opcode&$CF==$CF) disrch(baseop,XNIMM; (stx)
+;*   if(opcode&$CF==$83) disrch(baseop,LIMM); (subd)
 
-DISNEW              ldaa      BASEOP
+DISNEW              proc
+                    lda       BASEOP
                     anda      #$CF
                     cmpa      #$8D
                     bne       DISNEW1             ; jump not jsr
-                    ldab      #NIMM
+                    ldb       #NIMM
                     bra       DISNEW4
 
 DISNEW1             cmpa      #$8F
                     bne       DISNEW2             ; jump not sts
-                    ldab      #NIMM
+                    ldb       #NIMM
                     bra       DISNEW4
 
 DISNEW2             cmpa      #$CF
                     bne       DISNEW3             ; jump not stx
-                    ldab      #XNIMM
+                    ldb       #XNIMM
                     bra       DISNEW4
 
 DISNEW3             cmpa      #$83
                     bne       DISGEN              ; jump not subd
-                    ldab      #LIMM
-DISNEW4             jsr       DISRCH
+                    ldb       #LIMM
+
+DISNEW4             bsr       DISRCH
                     tstb
                     bne       DISGEN              ; jump if found
                     jsr       DISILLOP            ; "illegal opcode"
                     rts
 
-;   if(class == (GEN or NIMM or LIMM   ))   /* GEN,NIMM,LIMM,CPD */
-;      if(opcode&$CF==$83)
-;         if(pnorm==(PG3 or PG4)) disrch(opcode#$CF,CPD)
-;         class=LIMM;
-;      if((pnorm == (PG2 or PG4) and (opcode != ($Ax or $Ex)))
-;         disillop(); return();
-;      disgenrl();
-;      return();
+;*   if(class == (GEN or NIMM or LIMM   ))   /* GEN,NIMM,LIMM,CPD */
+;*      if(opcode&$CF==$83)
+;*         if(pnorm==(PG3 or PG4)) disrch(opcode#$CF,CPD)
+;*         class=LIMM;
+;*      if((pnorm == (PG2 or PG4) and (opcode != ($Ax or $Ex)))
+;*         disillop(); return();
+;*      disgenrl();
+;*      return();
 
-DISGEN              ldab      CLASS               ; get class
+DISGEN              proc
+                    ldb       CLASS               ; get class
                     cmpb      #GEN
                     beq       DISGEN1
                     cmpb      #NIMM
                     beq       DISGEN1
                     cmpb      #LIMM
                     bne       DISXLN              ; jump if other class
-DISGEN1             ldaa      BASEOP
+DISGEN1             lda       BASEOP
                     anda      #$CF
                     cmpa      #$83
                     bne       DISGEN3             ; jump if not #$83
-                    ldab      PNORM
+                    ldb       PNORM
                     cmpb      #PG3
                     blo       DISGEN3             ; jump not pg3 or 4
-                    ldab      #CPD
-                    jsr       DISRCH              ; look for cpd mne
-                    ldab      #LIMM
-                    stab      CLASS               ; set class to limm
-DISGEN3             ldab      PNORM
+                    ldb       #CPD
+                    bsr       DISRCH              ; look for cpd mne
+                    ldb       #LIMM
+                    stb       CLASS               ; set class to limm
+DISGEN3             ldb       PNORM
                     cmpb      #PG2
                     beq       DISGEN4             ; jump if page 2
                     cmpb      #PG4
                     bne       DISGEN5             ; jump not page 2 or 4
-DISGEN4             ldaa      BASEOP
+DISGEN4             lda       BASEOP
                     anda      #$B0                ; mask bits 6,3-0
                     cmpa      #$A0
                     beq       DISGEN5             ; jump if $Ax or $Ex
@@ -3952,64 +3641,64 @@ DISGEN4             ldaa      BASEOP
 DISGEN5             jsr       DISGENRL            ; process general class
                     rts
 
-;   else       /* XLIMM,XNIMM,YLIMM,YNIMM */
-;      if(pnorm==(PG2 or PG3))
-;         if(class==XLIMM) disrch(opcode&$CF,YLIMM);
-;         else disrch(opcode&$CF,YNIMM);
-;      if((pnorm == (PG3 or PG4))
-;         if(opcode != ($Ax or $Ex))
-;            disillop(); return();
-;      class=LIMM;
-;      disgen();
-;   return();
+;*   else       /* XLIMM,XNIMM,YLIMM,YNIMM */
+;*      if(pnorm==(PG2 or PG3))
+;*         if(class==XLIMM) disrch(opcode&$CF,YLIMM);
+;*         else disrch(opcode&$CF,YNIMM);
+;*      if((pnorm == (PG3 or PG4))
+;*         if(opcode != ($Ax or $Ex))
+;*            disillop(); return();
+;*      class=LIMM;
+;*      disgen();
+;*   return();
 
-DISXLN              ldab      PNORM
+DISXLN              proc
+                    ldb       PNORM
                     cmpb      #PG2
                     beq       DISXLN1             ; jump if page2
                     cmpb      #PG3
                     bne       DISXLN4             ; jump not page3
-DISXLN1             ldaa      BASEOP
+DISXLN1             lda       BASEOP
                     anda      #$CF
-                    ldab      CLASS
+                    ldb       CLASS
                     cmpb      #XLIMM
                     bne       DISXLN2
-                    ldab      #YLIMM
+                    ldb       #YLIMM
                     bra       DISXLN3             ; look for ylimm
 
-DISXLN2             ldab      #YNIMM              ; look for ynimm
-DISXLN3             jsr       DISRCH
-DISXLN4             ldab      PNORM
+DISXLN2             ldb       #YNIMM              ; look for ynimm
+DISXLN3             bsr       DISRCH
+DISXLN4             ldb       PNORM
                     cmpb      #PG3
                     blo       DISXLN5             ; jump if page 1 or 2
-                    ldaa      BASEOP              ; get opcode
+                    lda       BASEOP              ; get opcode
                     anda      #$B0                ; mask bits 6,3-0
                     cmpa      #$A0
                     beq       DISXLN5             ; jump opcode = $Ax or $Ex
                     jsr       DISILLOP            ; "illegal opcode"
                     rts
 
-DISXLN5             ldab      #LIMM
-                    stab      CLASS
-                    jsr       DISGENRL            ; process general class
+DISXLN5             ldb       #LIMM
+                    stb       CLASS
+                    bsr       DISGENRL            ; process general class
                     rts
 
+;*******************************************************************************
+;*disrch(a=opcode,b=class)
+;*return b=0 if not found
+;*  else mneptr=points to mnemonic
+;*        class=class of opcode
+;*******************************************************************************
+;*x=#MNETABL
+;*while(x[0] != eot)
+;*   if((opcode==x[4]) && ((class=NULL) || (class=x[5])))
+;*      mneptr=x;
+;*      class=x[5];
+;*      return(1);
+;*   x += 6;
+;*return(0);      /* not found */
 
-;******************
-; *disrch(a=opcode,b=class)
-; *return b=0 if not found
-;  else mneptr=points to mnemonic
-;        class=class of opcode
-;******************
-; *x=#MNETABL
-; *while(x[0] != eot)
-;   if((opcode==x[4]) && ((class=NULL) || (class=x[5])))
-;      mneptr=x;
-;      class=x[5];
-;      return(1);
-;   x += 6;
-; *return(0);      /* not found */
-
-DISRCH              equ       *
+DISRCH              proc
                     ldx       #MNETABL            ; point to top of table
 DISRCH1             cmpa      4,X                 ; test opcode
                     bne       DISRCH3             ; jump not this entry
@@ -4017,79 +3706,75 @@ DISRCH1             cmpa      4,X                 ; test opcode
                     beq       DISRCH2             ; jump if class=null
                     cmpb      5,X                 ; test class
                     bne       DISRCH3             ; jump not this entry
-DISRCH2             ldab      5,X
-                    stab      CLASS
+DISRCH2             ldb       5,X
+                    stb       CLASS
                     stx       MNEPTR              ; return ptr to mnemonic
                     incb
                     rts                           ; return found
 
 DISRCH3             pshb                          ; save class
-                    ldab      #6
+                    ldb       #6
                     abx
-                    ldab      0,X
+                    ldb       ,X
                     cmpb      #EOT                ; test end of table
                     pulb
                     bne       DISRCH1
                     clrb
                     rts                           ; return not found
 
-;******************
-; *prntmne() - output the mnemonic pointed
-; *at by mneptr.
-;******************
-; *outa(mneptr[0-3]);
-; *outspac;
-; *return();
+;*******************************************************************************
+;*prntmne() - output the mnemonic pointed at by mneptr.
+;*******************************************************************************
+;*outa(mneptr[0-3]);
+;*outspac;
+;*return();
 
-PRNTMNE             equ       *
+PRNTMNE             proc
                     ldx       MNEPTR
-                    ldaa      0,X
-                    jsr       OUTA                ; output char1
-                    ldaa      1,X
-                    jsr       OUTA                ; output char2
-                    ldaa      2,X
-                    jsr       OUTA                ; output char3
-                    ldaa      3,X
-                    jsr       OUTA                ; output char4
+
+                    @outa     ,X                  ; output char1
+                    @outa     1,X                 ; output char2
+                    @outa     2,X                 ; output char3
+                    @outa     3,X                 ; output char4
+
                     jsr       OUTSPAC
                     rts
 
-;******************
-; *disindx() - process indexed mode
-;******************
-; *disdir();
-; *outa(',');
-; *if(pnorm == (PG2 or PG4)) outa('Y');
-; *else outa('X');
-; *return();
+;*******************************************************************************
+;*disindx() - process indexed mode
+;*******************************************************************************
+;*disdir();
+;*outa(',');
+;*if(pnorm == (PG2 or PG4)) outa('Y');
+;*else outa('X');
+;*return();
 
-DISINDX             equ       *
-                    jsr       DISDIR              ; output $byte
-                    ldaa      #','
-                    jsr       OUTA                ; output ,
-                    ldab      PNORM
+DISINDX             proc
+                    bsr       DISDIR              ; output $byte
+                    @outa     #','                ; output ,
+                    ldb       PNORM
                     cmpb      #PG2
                     beq       DISIND1             ; jump if page2
                     cmpb      #PG4
                     bne       DISIND2             ; jump if not page4
-DISIND1             ldaa      #'Y'
+DISIND1             lda       #'Y'
                     bra       DISIND3
 
-DISIND2             ldaa      #'X'
+DISIND2             lda       #'X'
 DISIND3             jsr       OUTA                ; output x or y
                     rts
 
-;******************
-; *disrelad() - compute and output relative address.
-;******************
-; braddr = dispc[0] + (dispc++);( 2's comp arith)
-; *outa('$');
-; *out2bsp(braddr);
-; *return();
+;*******************************************************************************
+;*disrelad() - compute and output relative address.
+;*******************************************************************************
+;* braddr = dispc[0] + (dispc++);( 2's comp arith)
+;*outa('$');
+;*out2bsp(braddr);
+;*return();
 
-DISRELAD            equ       *
+DISRELAD            proc
                     ldx       DISPC
-                    ldab      0,X                 ; get relative offset
+                    ldb       ,X                  ; get relative offset
                     inx
                     stx       DISPC
                     tstb
@@ -4102,41 +3787,38 @@ DISRLD1             dex
                     bne       DISRLD1             ; subtract
 DISRLD2             stx       BRADDR              ; save address
                     jsr       OUTSPAC
-                    ldaa      #'$'
-                    jsr       OUTA
+                    @outa     #'$'
                     ldx       #BRADDR
                     jsr       OUT2BSP             ; output address
                     rts
 
+;*******************************************************************************
+;*disgenrl() - output data for the general cases which
+;*includes immediate, direct, indexed, and extended modes.
+;*******************************************************************************
+;*prntmne();
+;*if(baseop == ($8x or $Cx))   /* immediate */
+;*   outa('#');
+;*   disdir();
+;*   if(class == LIMM)
+;*      out1byt(dispc++);
+;*elseif(baseop == ($9x or $Dx))  /* direct */
+;*   disdir();
+;*elseif(baseop == ($Ax or $Ex)) /* indexed */
+;*   disindx();
+;*else  (baseop == ($Bx or $Fx)) /* extended */
+;*   disext();
+;*return();
 
-;******************
-; *disgenrl() - output data for the general cases which
-; *includes immediate, direct, indexed, and extended modes.
-;******************
-; *prntmne();
-; *if(baseop == ($8x or $Cx))   /* immediate */
-;   outa('#');
-;   disdir();
-;   if(class == LIMM)
-;      out1byt(dispc++);
-; *elseif(baseop == ($9x or $Dx))  /* direct */
-;   disdir();
-; *elseif(baseop == ($Ax or $Ex)) /* indexed */
-;   disindx();
-; *else  (baseop == ($Bx or $Fx)) /* extended */
-;   disext();
-; *return();
-
-DISGENRL            equ       *
-                    jsr       PRNTMNE             ; print mnemonic
-                    ldaa      BASEOP              ; get opcode
+DISGENRL            proc
+                    bsr       PRNTMNE             ; print mnemonic
+                    lda       BASEOP              ; get opcode
                     anda      #$B0                ; mask bits 6,3-0
                     cmpa      #$80
                     bne       DISGRL2             ; jump if not immed
-                    ldaa      #'#'                ; do immediate
-                    jsr       OUTA
-                    jsr       DISDIR
-                    ldab      CLASS
+                    @outa     #'#'                ; do immediate
+                    bsr       DISDIR
+                    ldb       CLASS
                     cmpb      #LIMM
                     beq       DISGRL1             ; jump class = limm
                     rts
@@ -4148,120 +3830,96 @@ DISGRL1             ldx       DISPC
 
 DISGRL2             cmpa      #$90
                     bne       DISGRL3             ; jump not direct
-                    jsr       DISDIR              ; do direct
+                    bsr       DISDIR              ; do direct
                     rts
 
 DISGRL3             cmpa      #$A0
-                    bne       DISGRL4             ; jump not indexed
-                    jsr       DISINDX             ; do extended
+                    bne       DISEXT              ; jump not indexed, do extended
+                    bsr       DISINDX             ; do extended
                     rts
 
-DISGRL4             jsr       DISEXT              ; do extended
-                    rts
+;*******************************************************************************
+;*disdir() - output "$ next byte"
+;*******************************************************************************
 
-;*****************
-; *disdir() - output "$ next byte"
-;*****************
-DISDIR              equ       *
-                    ldaa      #'$'
-                    jsr       OUTA
+DISDIR              proc
+                    @outa     #'$'
                     ldx       DISPC
                     jsr       OUT1BYT
                     stx       DISPC
                     rts
 
-;*****************
-; *disext() - output "$ next 2 bytes"
-;*****************
-DISEXT              equ       *
-                    ldaa      #'$'
-                    jsr       OUTA
+;*******************************************************************************
+;*disext() - output "$ next 2 bytes"
+;*******************************************************************************
+
+DISEXT              proc
+                    @outa     #'$'
                     ldx       DISPC
                     jsr       OUT2BSP
                     stx       DISPC
                     rts
 
 
-;*****************
-; *disillop() - output "illegal opcode"
-;*****************
-DISMSG1             fcc       'ILLOP'
-                    fcb       EOT
-DISILLOP            equ       *
+;*******************************************************************************
+;*disillop() - output "illegal opcode"
+;*******************************************************************************
+
+DISILLOP            proc
                     pshx
-                    ldx       #DISMSG1
+                    ldx       #Msg@@
                     jsr       OUTSTRG0            ; no cr
                     pulx
                     rts
 
+Msg@@               fcc       'ILLOP',EOT
 
+;*******************************************************************************
+;*   help  -  List buffalo commands to terminal.
+;*******************************************************************************
 
-;**********
-;   help  -  List buffalo commands to terminal.
-;**********
-HELP                equ       *
-                    ldx       #HELPMSG1
+HELP                proc
+                    ldx       #Msg@@
                     jsr       OUTSTRG             ; print help screen
                     rts
 
-HELPMSG1            equ       *
-                    fcc       'ASM [<addr>]  Line asm/disasm'
-                    fcb       $0D
-                    fcc       '  [/,=]  Same addr,       [^,-]  Prev addr,       [+,CTLJ] Next addr'
-                    fcb       $0D
-                    fcc       '  [CR]  Next opcode,                              [CTLA,.]  Quit'
-                    fcb       $0D
-                    fcc       'BF <addr1> <addr2> [<data>]  Block fill memory'
-                    fcb       $0D
-                    fcc       'BR [-][<addr>] Set up bkpt table'
-                    fcb       $0D
-                    fcc       'BULK  Erase EEPROM,                 BULKALL  Erase EEPROM and CONFIG'
-                    fcb       $0D
-                    fcc       'CALL [<addr>] Call subroutine'
-                    fcb       $0D
-                    fcc       'GO [<addr>] Execute code at addr,        PROCEED  Continue execution'
-                    fcb       $0D
-                    fcc       'EEMOD [<addr> [<addr>]] Modify EEPROM range'
-                    fcb       $0D
-                    fcc       'LOAD, VERIFY [T] <host dwnld command>  Load or verify S-records'
-                    fcb       $0D
-                    fcc       'MD [<addr1> [<addr2>]]  Memory dump'
-                    fcb       $0D
-                    fcc       'MM [<addr>] or [<addr>]/  Memory Modify'
-                    fcb       $0D
-                    fcc       '  [/,=]  Same addr,  [^,-,CTLH] Prev addr,  [+,CTLJ,SPACE] Next addr'
-                    fcb       $0D
-                    fcc       '  <addr>O Compute offset,                   [CR]  Quit'
-                    fcb       $0D
-                    fcc       'MOVE <s1> <s2> [<d>]  Block move'
-                    fcb       $0D
-                    fcc       'OFFSET [-]<arg>  Offset for download'
-                    fcb       $0D
-                    fcc       'RM [P,Y,X,A,B,C,S]  Register modify'
-                    fcb       $0D
-                    fcc       'STOPAT <addr>  Trace until addr'
-                    fcb       $0D
-                    fcc       'T [<n>]  Trace n instructions'
-                    fcb       $0D
-                    fcc       'TM  Transparent mode (CTLA = exit, CTLB = send brk)'
-                    fcb       $0D
-                    fcc       '[CTLW]  Wait,          [CTLX,DEL] Abort         [CR] Repeat last cmd'
-                    fcb       $0D
-                    fcb       4
+Msg@@               fcc       'ASM [<addr>]  Line asm/disasm',CR
+                    fcc       '  [/,=]  Same addr,       [^,-]  Prev addr,       [+,CTLJ] Next addr',CR
+                    fcc       '  [CR]  Next opcode,                              [CTLA,.]  Quit',CR
+                    fcc       'BF <addr1> <addr2> [<data>]  Block fill memory',CR
+                    fcc       'BR [-][<addr>] Set up bkpt table',CR
+                    fcc       'BULK  Erase EEPROM,                 BULKALL  Erase EEPROM and CONFIG',CR
+                    fcc       'CALL [<addr>] Call subroutine',CR
+                    fcc       'GO [<addr>] Execute code at addr,        PROCEED  Continue execution',CR
+                    fcc       'EEMOD [<addr> [<addr>]] Modify EEPROM range',CR
+                    fcc       'LOAD, VERIFY [T] <host dwnld command>  Load or verify S-records',CR
+                    fcc       'MD [<addr1> [<addr2>]]  Memory dump',CR
+                    fcc       'MM [<addr>] or [<addr>]/  Memory Modify',CR
+                    fcc       '  [/,=]  Same addr,  [^,-,CTLH] Prev addr,  [+,CTLJ,SPACE] Next addr',CR
+                    fcc       '  <addr>O Compute offset,                   [CR]  Quit',CR
+                    fcc       'MOVE <s1> <s2> [<d>]  Block move',CR
+                    fcc       'OFFSET [-]<arg>  Offset for download',CR
+                    fcc       'RM [P,Y,X,A,B,C,S]  Register modify',CR
+                    fcc       'STOPAT <addr>  Trace until addr',CR
+                    fcc       'T [<n>]  Trace n instructions',CR
+                    fcc       'TM  Transparent mode (CTLA = exit, CTLB = send brk)',CR
+                    fcc       '[CTLW]  Wait,          [CTLX,DEL] Abort         [CR] Repeat last cmd',CR
 
+                    fcb       EOT
 
+;*******************************************************************************
+;* call [<addr>] - Execute a jsr to <addr> or user
+;* pc value.  Return to monitor via  rts or breakpoint.
+;*******************************************************************************
+;*a = wskip();
+;*if(a != cr)
+;*     a = buffarg();
+;*     a = wskip();
+;*     if(a != cr) return(bad argument)
+;*     pc = shftreg;
 
-;**********
-;   call [<addr>] - Execute a jsr to <addr> or user
-; *pc value.  Return to monitor via  rts or breakpoint.
-;**********
-; *a = wskip();
-; *if(a != cr)
-;     a = buffarg();
-;     a = wskip();
-;     if(a != cr) return(bad argument)
-;     pc = shftreg;
-CALL                jsr       WSKIP
+CALL                proc
+                    jsr       WSKIP
                     beq       CALL3               ; jump if no arg
                     jsr       BUFFARG
                     jsr       WSKIP
@@ -4271,33 +3929,35 @@ CALL                jsr       WSKIP
                     rts
 
 CALL2               ldx       SHFTREG
-                    stx       REGS                ; pc = <addr>
+                    stx       REGISTERS           ; pc = <addr>
 
-; *put return address on user stack
-; *setbps();
-; *restack();     /* restack and go*/
+;*put return address on user stack
+;*setbps();
+;*restack();     /* restack and go*/
+
 CALL3               ldx       SP
                     dex                           ; user stack pointer
                     ldd       #RETURN             ; return address
-                    std       0,X
+                    std       ,x
                     dex
                     stx       SP                  ; new user stack pointer
-                    jsr       SETBPS
+                    bsr       SETBPS
                     clr       TMP2                ; 1=go, 0=call
                     jmp       RESTACK             ; go to user code
 
-;**********
-;   return() - Return here from rts after
-; *call command.
-;**********
-RETURN              psha                          ; save a register
+;*******************************************************************************
+;* return() - Return here from rts after call command.
+;*******************************************************************************
+
+RETURN              proc
+                    psha                          ; save a register
                     tpa
-                    staa      REGS+8              ; cc register
+                    sta       REGISTERS+8         ; cc register
                     sei                           ; mask interrupts
                     pula
-                    std       REGS+6              ; a and b registers
-                    stx       REGS+4              ; x register
-                    sty       REGS+2              ; y register
+                    std       REGISTERS+6         ; a and b registers
+                    stx       REGISTERS+4         ; x register
+                    sty       REGISTERS+2         ; y register
                     sts       SP                  ; user stack pointer
                     lds       PTR2                ; monitor stack pointer
                     jsr       REMBPS              ; remove breakpoints
@@ -4305,141 +3965,146 @@ RETURN              psha                          ; save a register
                     jsr       RPRINT              ; print user registers
                     rts
 
+;*******************************************************************************
+;* proceed - Same as go except it ignores
+;* a breakpoint at the first opcode.  Calls
+;* runone for the first instruction only.
+;*******************************************************************************
 
-;**********
-;   proceed - Same as go except it ignores
-; *a breakpoint at the first opcode.  Calls
-; *runone for the first instruction only.
-;**********
-PROCEED             equ       *
+PROCEED             proc
                     jsr       RUNONE              ; run one instruction
                     jsr       CHKABRT             ; check for abort
                     clr       TMP2                ; flag for breakpoints
                     inc       TMP2                ; 1=go 0=call
-                    jsr       SETBPS
+                    bsr       SETBPS
                     jmp       RESTACK             ; go execute
 
-;**********
-;   go [<addr>] - Execute starting at <addr> or
-; *user's pc value.  Executes an rti to user code.
-; *Returns to monitor via an swi through swiin.
-;**********
-; *a = wskip();
-; *if(a != cr)
-;     a = buffarg();
-;     a = wskip();
-;     if(a != cr) return(bad argument)
-;     pc = shftreg;
-; *setbps();
-; *restack();     /* restack and go*/
-GO                  jsr       WSKIP
+;*******************************************************************************
+;* go [<addr>] - Execute starting at <addr> or
+;* user's pc value.  Executes an rti to user code.
+;* Returns to monitor via an swi through swiin.
+;*******************************************************************************
+;*a = wskip();
+;*if(a != cr)
+;*     a = buffarg();
+;*     a = wskip();
+;*     if(a != cr) return(bad argument)
+;*     pc = shftreg;
+;*setbps();
+;*restack();     /* restack and go*/
+
+GO                  proc
+                    jsr       WSKIP
                     beq       GO2                 ; jump if no arg
                     jsr       BUFFARG
                     jsr       WSKIP
-                    beq       GO1                 ; jump if cr
+                    beq       CR@@                ; jump if cr
                     ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-GO1                 ldx       SHFTREG
-                    stx       REGS                ; pc = <addr>
+CR@@                ldx       SHFTREG
+                    stx       REGISTERS           ; pc = <addr>
 GO2                 clr       TMP2
                     inc       TMP2                ; 1=go, 0=call
-                    jsr       SETBPS
+                    bsr       SETBPS
                     jmp       RESTACK             ; go to user code
 
-;*****
+;*******************************************************************************
 ;** SWIIN - Breakpoints from go or call commands enter here.
-; *Remove breakpoints, save user registers, return
-SWIIN               equ       *                   ; swi entry point
+;*Remove breakpoints, save user registers, return
+
+SWIIN               proc
                     tsx                           ; user sp -> x
                     lds       PTR2                ; restore monitor sp
-                    jsr       SAVSTACK            ; save user regs
-                    jsr       REMBPS              ; remove breakpoints from code
-                    ldx       REGS
+                    jsr       SAVSTACK            ; save user registers
+                    bsr       REMBPS              ; remove breakpoints from code
+                    ldx       REGISTERS
                     dex
-                    stx       REGS                ; save user pc value
+                    stx       REGISTERS           ; save user pc value
 
-; *if(call command) remove call return addr from user stack;
+          ; if(call command) remove call return addr from user stack;
+
                     tst       TMP2                ; 1=go, 0=call
-                    bne       GO3                 ; jump if go command
+                    bne       Go@@                ; jump if go command
                     ldx       SP                  ; remove return address
-                    inx                           ; user stack pointer
-                    inx
+                    inx:2                         ; user stack pointer
                     stx       SP
-GO3                 jsr       OUTCRLF             ; print register values
+Go@@                jsr       OUTCRLF             ; print register values
                     jsr       RPRINT
                     rts                           ; done
 
-;**********
-;  setbps - Replace user code with swi's at
-; *breakpoint addresses.
-;**********
-; *for(b=0; b=6; b =+ 2)
-;     x = brktabl[b];
-;     if(x != 0)
-;          optabl[b] = x[0];
-;          x[0] = $3F;
-; *Put monitor SWI vector into jump table
+;*******************************************************************************
+;* setbps - Replace user code with swi's at breakpoint addresses.
+;*******************************************************************************
+;*for(b=0; b=6; b =+ 2)
+;*     x = brktabl[b];
+;*     if(x != 0)
+;*          optabl[b] = x[0];
+;*          x[0] = $3F;
+;*Put monitor SWI vector into jump table
 
-SETBPS              clrb
-SETBPS1             ldx       #BRKTABL
+SETBPS              proc
+                    clrb
+Loop@@              ldx       #BRKTABL
                     ldy       #PTR4
                     abx
                     aby
-                    ldx       0,X                 ; breakpoint table entry
-                    beq       SETBPS2             ; jump if 0
-                    ldaa      0,X                 ; save user opcode
-                    staa      0,Y
-                    ldaa      #SWI
+                    ldx       ,X                  ; breakpoint table entry
+                    beq       Skip@@              ; jump if 0
+                    lda       ,X                  ; save user opcode
+                    sta       ,Y
+                    lda       #SWI
                     jsr       WRITE               ; insert swi into code
-SETBPS2             addb      #$2
-                    cmpb      #$6
-                    ble       SETBPS1             ; loop 4 times
+Skip@@              addb      #2
+                    cmpb      #6
+                    ble       Loop@@              ; loop 4 times
                     ldx       JSWI+1
                     stx       PTR3                ; save user swi vector
-                    ldaa      #$7E                ; jmp opcode
-                    staa      JSWI
+                    lda       #JMP                ; jmp opcode
+                    sta       JSWI
                     ldx       #SWIIN
                     stx       JSWI+1              ; monitor swi vector
                     rts
 
-;**********
-;   rembps - Remove breakpoints from user code.
-;**********
-; *for(b=0; b=6; b =+ 2)
-;     x = brktabl[b];
-;     if(x != 0)
-;          x[0] = optabl[b];
-; *Replace user's SWI vector
-REMBPS              clrb
-REMBPS1             ldx       #BRKTABL
+;*******************************************************************************
+;*   rembps - Remove breakpoints from user code.
+;*******************************************************************************
+;*for(b=0; b=6; b =+ 2)
+;*     x = brktabl[b];
+;*     if(x != 0)
+;*          x[0] = optabl[b];
+;*Replace user's SWI vector
+
+REMBPS              proc
+                    clrb
+Loop@@              ldx       #BRKTABL
                     ldy       #PTR4
                     abx
                     aby
-                    ldx       0,X                 ; breakpoint table entry
-                    beq       REMBPS2             ; jump if 0
-                    ldaa      0,Y
+                    ldx       ,X                  ; breakpoint table entry
+                    beq       Skip@@              ; jump if 0
+                    lda       ,Y
                     jsr       WRITE               ; restore user opcode
-REMBPS2             addb      #$2
-                    cmpb      #$6
-                    ble       REMBPS1             ; loop 4 times
+Skip@@              addb      #2
+                    cmpb      #6
+                    ble       Loop@@              ; loop 4 times
                     ldx       PTR3                ; restore user swi vector
                     stx       JSWI+1
                     rts
 
+;*******************************************************************************
+;* trace <n> - Trace n instructions starting
+;* at user's pc value. n is a hex number less than $FF (defaults to 1).
+;*******************************************************************************
+;*a = wskip();
+;*if(a != cr)
+;*     a = buffarg(); a = wskip();
+;*     if(a != cr) return(bad argument);
+;*     countt1 = n
 
-;**********
-;   trace <n> - Trace n instructions starting
-; *at user's pc value. n is a hex number less than
-; *$FF (defaults to 1).
-;**********
-; *a = wskip();
-; *if(a != cr)
-;     a = buffarg(); a = wskip();
-;     if(a != cr) return(bad argument);
-;     countt1 = n
-TRACE               clr       TMP4
+TRACE               proc
+                    clr       TMP4
                     inc       TMP4                ; default count=1
                     clr       CHRCNT              ; set up for display
                     jsr       WSKIP
@@ -4451,43 +4116,41 @@ TRACE               clr       TMP4
                     jsr       OUTSTRG
                     rts
 
-TRACE1              ldaa      SHFTREG+1           ; n
-                    staa      TMP4
+TRACE1              lda       SHFTREG+1           ; n
+                    sta       TMP4
 
-; *Disassemble the line about to be traced
-TRACE2              equ       *
-                    ldab      TMP4
+; Disassemble the line about to be traced
+
+TRACE2              ldb       TMP4
                     pshb
-                    ldx       REGS
+                    ldx       REGISTERS
                     stx       PTR1                ; pc value for disass
                     jsr       DISASSM
                     pulb
-                    stab      TMP4
+                    stb       TMP4
 
-; *run one instruction
-; *rprint();
-; *while(count > 0) continue trace;
-                    jsr       RUNONE
+;*run one instruction
+;*rprint();
+;*while(count > 0) continue trace;
+
+                    bsr       RUNONE
                     jsr       CHKABRT             ; check for abort
                     jsr       TABTO               ; print registers for
                     jsr       RPRINT              ; result of trace
                     dec       TMP4
-                    beq       TRACDON             ; quit if count=0
+                    beq       :AnRTS              ; quit if count=0
 TRACE3              jsr       OUTCRLF
                     bra       TRACE2
 
-TRACDON             rts
+;*******************************************************************************
+;* stopat <addr> - Trace instructions until <addr> is reached.
+;*******************************************************************************
+;*if((a=wskip) != cr)
+;*     a = buffarg(); a = wskip();
+;*     if(a != cr) return(bad argument);
+;*else return(bad argument);
 
-
-;**********
-;   stopat <addr> - Trace instructions until <addr>
-; *is reached.
-;**********
-; *if((a=wskip) != cr)
-;     a = buffarg(); a = wskip();
-;     if(a != cr) return(bad argument);
-; *else return(bad argument);
-STOPAT              equ       *
+STOPAT              proc
                     jsr       WSKIP
                     beq       STOPGO              ; jump if cr - no argument
                     jsr       BUFFARG
@@ -4502,117 +4165,122 @@ STOPAT1             tst       COUNT
                     ldx       SHFTREG
                     stx       PTRMEM              ; update "current location"
 
-; *while(!(ptrmem <= userpc < ptrmem+10)) runone();
-; *rprint();
-STOPGO              ldd       REGS                ; userpc
+;*while(!(ptrmem <= userpc < ptrmem+10)) runone();
+;*rprint();
+
+STOPGO              proc
+                    ldd       REGISTERS           ; userpc
                     cpd       PTRMEM
-                    blo       STOPNEXT            ; if(userpc < ptrmem) runone
+                    blo       RunOne@@            ; if(userpc < ptrmem) runone
                     ldd       PTRMEM
                     addd      #10
-                    cpd       REGS
-                    bhi       STOPDON             ; quit if ptrmem+10 > userpc
-STOPNEXT            jsr       RUNONE
+                    cpd       REGISTERS
+                    bhi       Done@@              ; quit if ptrmem+10 > userpc
+RunOne@@            bsr       RUNONE
                     jsr       CHKABRT             ; check for abort
                     bra       STOPGO
 
-STOPDON             jsr       OUTCRLF
+Done@@              jsr       OUTCRLF
                     jsr       RPRINT              ; result of trace
                     rts                           ; done
 
+;*******************************************************************************
+;* runone - This routine is used by the trace and
+;* execute commands to run one only one user instruction.
+;*   Control is passed to the user code via an RTI.  OC5
+;* is then used to trigger an XIRQ as soon as the first user
+;* opcode is fetched.  Control then returns to the monitor
+;* through XIRQIN.
+;*  Externally, the OC5 pin must be wired to the XIRQ pin.
+;*******************************************************************************
+;* Disable oc5 interrupts
+;* Put monitor XIRQ vector into jump table
+;* Unmask x bit in user ccr
+;* Setup OC5 to go low when first user instruction executed
 
-;*************************
-; runone - This routine is used by the trace and
-; execute commands to run one only one user instruction.
-;   Control is passed to the user code via an RTI.  OC5
-; is then used to trigger an XIRQ as soon as the first user
-; opcode is fetched.  Control then returns to the monitor
-; through XIRQIN.
-;  Externally, the OC5 pin must be wired to the XIRQ pin.
-;************************
-; Disable oc5 interrupts
-; Put monitor XIRQ vector into jump table
-; Unmask x bit in user ccr
-; Setup OC5 to go low when first user instruction executed
-RUNONE              equ       *
-                    ldaa      #$7E                ; put "jmp xirqin" in jump table
-                    staa      JTOC5
+RUNONE              proc
+                    lda       #JMP                ; put "jmp xirqin" in jump table
+                    sta       JTOC5
                     ldx       #XIRQIN
                     stx       JXIRQ+1
-                    ldaa      REGS+8              ; x bit will be cleared when
+                    lda       REGISTERS+8         ; x bit will be cleared when
                     anda      #$BF                ; rti is executed below
-                    staa      REGS+8
-                    ldab      #87                 ; cycles to end of rti
+                    sta       REGISTERS+8
+                    ldb       #87                 ; cycles to end of rti
                     ldx       TCNT
-                    abx                           ; 3~ \
-                    stx       TOC5                ; oc5 match register 5~ \
-                    ldaa      TCTL1               ; 4~ \
-                    anda      #$FE                ; set up oc5 low on match 2~ \
-                    staa      TCTL1               ; enable oc5 interrupt 4~ / 86~
+                    abx                           ; 3~ /
+                    stx       TOC5                ; oc5 match register 5~ /
+                    lda       TCTL1               ; 4~ /
+                    anda      #$FE                ; set up oc5 low on match 2~ /
+                    sta       TCTL1               ; enable oc5 interrupt 4~ / 86~
 
-;** RESTACK - Restore user stack and RTI to user code.
-; This code is the pathway to execution of user code.
-; *(Force extended addressing to maintain cycle count)
-; *Restore user stack and rti to user code
-RESTACK             equ       *                   ; 68~
+;** RESTACK - Restore user stack and RTI to user code. 68~
+;* This code is the pathway to execution of user code.
+;*(Force extended addressing to maintain cycle count)
+;*Restore user stack and rti to user code
+
+RESTACK             proc
                     sts       >PTR2               ; save monitor sp
                     lds       >SP                 ; user stack pointer
-                    ldx       >REGS
+                    ldx       >REGISTERS
                     pshx                          ; pc
-                    ldx       >REGS+2
+                    ldx       >REGISTERS+2
                     pshx                          ; y
-                    ldx       >REGS+4
+                    ldx       >REGISTERS+4
                     pshx                          ; x
-                    ldd       >REGS+6
+                    ldd       >REGISTERS+6
                     psha                          ; a
                     pshb                          ; b
-                    ldaa      >REGS+8
+                    lda       >REGISTERS+8
                     psha                          ; ccr
                     rti
 
 ;** Return here from run one line of user code.
-XIRQIN              equ       *
+
+XIRQIN              proc
                     tsx                           ; user sp -> x
                     lds       PTR2                ; restore monitor sp
 
 ;** SAVSTACK - Save user's registers.
-; On entry - x points to top of user stack.
-SAVSTACK            equ       *
-                    ldaa      0,X
-                    staa      REGS+8              ; user ccr
+;* On entry - x points to top of user stack.
+
+SAVSTACK            proc
+                    lda       ,X
+                    sta       REGISTERS+8         ; user ccr
                     ldd       1,X
-                    staa      REGS+7              ; b
-                    stab      REGS+6              ; a
+                    sta       REGISTERS+7         ; b
+                    stb       REGISTERS+6         ; a
                     ldd       3,X
-                    std       REGS+4              ; x
+                    std       REGISTERS+4         ; x
                     ldd       5,X
-                    std       REGS+2              ; y
+                    std       REGISTERS+2         ; y
                     ldd       7,X
-                    std       REGS                ; pc
-                    ldab      #8
+                    std       REGISTERS           ; pc
+                    ldb       #8
                     abx
                     stx       SP                  ; user stack pointer
-                    ldaa      TCTL1               ; force oc5 pin high which
-                    oraa      #$03                ; is tied to xirq line
-                    staa      TCTL1
-                    ldaa      #$08
-                    staa      CFORC
+                    lda       TCTL1               ; force oc5 pin high which
+                    ora       #$03                ; is tied to xirq line
+                    sta       TCTL1
+                    lda       #$08
+                    sta       CFORC
                     rts
 
+;*******************************************************************************
+;*   HOST() - Estb lishes transparent link between
+;*       terminal and host.  Port used for host is
+;*       determined in the reset initialization routine
+;*       and stored in HOSTDEV.
+;*          To exit type control A.
+;*          To send break to host type control B.
+;*if(no external device) return;
+;*initialize host port;
+;*While( !(control A))
+;*     input(terminal); output(host);
+;*     input(host); output(terminal);
 
-;**********
-;   HOST() - Estb lishes transparent link between
-;       terminal and host.  Port used for host is
-;       determined in the reset initialization routine
-;       and stored in HOSTDEV.
-;          To exit type control A.
-;          To send break to host type control B.
-; *if(no external device) return;
-; *initialize host port;
-; *While( !(control A))
-;     input(terminal); output(host);
-;     input(host); output(terminal);
-
-HOST                ldaa      EXTDEV
+HOST                proc
+                    lda       EXTDEV
                     bne       HOST0               ; jump if host port avail.
                     ldx       #MSG10              ; "no host port avail"
                     jsr       OUTSTRG
@@ -4620,7 +4288,7 @@ HOST                ldaa      EXTDEV
 
 HOST0               clr       AUTOLF              ; turn off autolf
                     jsr       HOSTCO              ; connect sci (evb board)
-                    jsr       HOSTINIT            ; initialize host port
+                    bsr       HOSTINIT            ; initialize host port
 HOST1               jsr       INPUT               ; read terminal
                     tsta
                     beq       HOST3               ; jump if no char
@@ -4628,11 +4296,11 @@ HOST1               jsr       INPUT               ; read terminal
                     beq       HOSTEND             ; jump if control a
                     cmpa      #CTLB
                     bne       HOST2               ; jump if not control b
-                    jsr       TXBREAK             ; send break to host
+                    bsr       TXBREAK             ; send break to host
                     bra       HOST3
 
-HOST2               jsr       HOSTOUT             ; echo to host
-HOST3               jsr       HOSTIN              ; read host
+HOST2               bsr       HOSTOUT             ; echo to host
+HOST3               bsr       HOSTIN              ; read host
                     tsta
                     beq       HOST1               ; jump if no char
                     jsr       OUTPUT              ; echo to terminal
@@ -4642,92 +4310,100 @@ HOSTEND             inc       AUTOLF              ; turn on autolf
                     jsr       TARGCO              ; disconnect sci (evb board)
                     rts                           ; return
 
-;**********
-; txbreak() - transmit break to host port.
-; The duration of the transmitted break is
-; approximately 200,000 E-clock cycles, or
-; 100ms at 2.0 MHz.
-;***********
-TXBREAK             equ       *
-                    ldaa      HOSTDEV
+;*******************************************************************************
+;* txbreak() - transmit break to host port.
+;* The duration of the transmitted break is
+;* approximately 200,000 E-clock cycles, or
+;* 100ms at 2.0 MHz.
+;*******************************************************************************
+
+TXBREAK             proc
+                    lda       HOSTDEV
                     cmpa      #$03
                     beq       TXBDU               ; jump if duartb is host
 
-TXBSCI              ldx       #SCCR2              ; sci is host
-                    bset      0,X,$01             ; set send break bit
+                    ldx       #SCCR2              ; sci is host
+                    bset      ,X,#01              ; set send break bit
                     bsr       TXBWAIT
-                    bclr      0,X,$01             ; clear send break bit
-                    bra       TXB1
+                    bclr      ,X,#01              ; clear send break bit
+                    bra       CRLF@@
 
-TXBDU               ldx       #PORTB              ; duart host port
-                    ldaa      #$60                ; start break cmd
-                    staa      2,X                 ; port b command register
+TXBDU               ldx       #DPORTB             ; duart host port
+                    lda       #$60                ; start break cmd
+                    sta       2,X                 ; port b command register
                     bsr       TXBWAIT
-                    ldaa      #$70                ; stop break cmd
-                    staa      2,X                 ; port b command register
+                    lda       #$70                ; stop break cmd
+                    sta       2,X                 ; port b command register
 
-TXB1                ldaa      #$0D
-                    jsr       HOSTOUT             ; send carriage return
-                    ldaa      #$0A
-                    jsr       HOSTOUT             ; send linefeed
+CRLF@@              lda       #CR
+                    bsr       HOSTOUT             ; send carriage return
+                    lda       #LF
+                    bsr       HOSTOUT             ; send linefeed
                     rts
 
-TXBWAIT             ldy       #$6F9B              ; loop count = 28571
-TXBWAIT1            dey                           ; 7 cycle loop
-                    bne       TXBWAIT1
+TXBWAIT             proc
+                    ldy       #28571              ; loop count = 28571
+Loop@@              dey                           ; 7 cycle loop
+                    bne       Loop@@
                     rts
 
+;*******************************************************************************
+;* hostinit(), hostin(), hostout() - host i/o
+;* routines.  Restores original terminal device.
+;*******************************************************************************
 
-;**********
-;   hostinit(), hostin(), hostout() - host i/o
-; *routines.  Restores original terminal device.
-;**********
-HOSTINIT            ldab      IODEV               ; save terminal
+HOSTINIT            proc
+                    ldb       IODEV               ; save terminal
                     pshb
-                    ldab      HOSTDEV
-                    stab      IODEV               ; point to host
+                    ldb       HOSTDEV
+                    stb       IODEV               ; point to host
                     jsr       INIT                ; initialize host
                     bra       TERMRES             ; restore terminal
 
-HOSTIN              ldab      IODEV               ; save terminal
+HOSTIN              proc
+                    ldb       IODEV               ; save terminal
                     pshb
-                    ldab      HOSTDEV
-                    stab      IODEV               ; point to host
+                    ldb       HOSTDEV
+                    stb       IODEV               ; point to host
                     jsr       INPUT               ; read host
                     bra       TERMRES             ; restore terminal
 
-HOSTOUT             ldab      IODEV               ; save terminal
+HOSTOUT             proc
+                    ldb       IODEV               ; save terminal
                     pshb
-                    ldab      HOSTDEV
-                    stab      IODEV               ; point to host
+                    ldb       HOSTDEV
+                    stb       IODEV               ; point to host
                     jsr       OUTPUT              ; write to host
 TERMRES             pulb                          ; restore terminal device
-                    stab      IODEV
+                    stb       IODEV
                     rts
 
+;*******************************************************************************
+;*   load(ptrbuff[]) - Load s1/s9 records from
+;* host to memory.  Ptrbuff[] points to string in
+;* input buffer which is a command to output s1/s9
+;* records from the host ("cat filename" for unix).
+;*    Returns error and address if it can't write
+;* to a particular location.
+;*******************************************************************************
+;*   verify(ptrbuff[]) - Verify memory from load
+;*command.  Ptrbuff[] is same as for load.
+;* tmp3 is used as an error indication, 0=no errors,
+;* 1=receiver, 2=rom error, 3=checksum error.
+;*******************************************************************************
 
-;**********
-;   load(ptrbuff[]) - Load s1/s9 records from
-; *host to memory.  Ptrbuff[] points to string in
-; *input buffer which is a command to output s1/s9
-; *records from the host ("cat filename" for unix).
-;    Returns error and address if it can't write
-; *to a particular location.
-;**********
-;   verify(ptrbuff[]) - Verify memory from load
-; *command.  Ptrbuff[] is same as for load.
-; tmp3 is used as an error indication, 0=no errors,
-; 1=receiver, 2=rom error, 3=checksum error.
-;**********
-VERIFY              clr       TMP2
+VERIFY              proc
+                    clr       TMP2
                     inc       TMP2                ; TMP2=1=verify
                     bra       LOAD1
 
-LOAD                clr       TMP2                ; 0=load
+LOAD                proc
+                    clr       TMP2                ; 0=load
 
-; *a=wskip();
-; *if(a = cr) goto transparent mode;
-; *if(t option) hostdev = iodev;
+;*a=wskip();
+;*if(a = cr) goto transparent mode;
+;*if(t option) hostdev = iodev;
+
 LOAD1               equ       *
                     clr       TMP3                ; clear error flag
                     jsr       WSKIP
@@ -4740,59 +4416,61 @@ LOAD2               jsr       UPCASE
                     jsr       INCBUFF
                     jsr       READBUFF            ; get next character
                     jsr       DECBUFF
-                    cmpa      #$0D
+                    cmpa      #CR
                     bne       LOAD3               ; jump if not t option
                     clr       AUTOLF
-                    ldaa      IODEV
-                    staa      HOSTDEV             ; set host port = terminal
+                    lda       IODEV
+                    sta       HOSTDEV             ; set host port = terminal
                     bra       LOAD10              ; go wait for s1 records
 
-; *else while(not cr)
-;     read character from input buffer;
-;     send character to host;
+;*else while(not cr)
+;*     read character from input buffer;
+;*     send character to host;
+
 LOAD3               clr       AUTOLF
                     jsr       HOSTCO              ; connect sci (evb board)
-                    jsr       HOSTINIT            ; initialize host port
+                    bsr       HOSTINIT            ; initialize host port
 LOAD4               jsr       READBUFF            ; get next char
                     jsr       INCBUFF
                     psha                          ; save char
-                    jsr       HOSTOUT             ; output to host
+                    bsr       HOSTOUT             ; output to host
                     jsr       OUTPUT              ; echo to terminal
                     pula
-                    cmpa      #$0D
+                    cmpa      #CR
                     bne       LOAD4               ; jump if not cr
 
-; *repeat:                           /* look for s records */
-;      if(hostdev != iodev) check abort;
-;      a = hostin();
-;      if(a = 'S')
-;          a = hostin;
-;          if(a = '1')
-;              checksum = 0;
-;              get byte count in b;
-;              get base address in x;
-;              while(byte count > 0)
-;                  byte();
-;                  x++; b--;
-;                  if(tmp3=0)           /* no error */
-;                      if(load) x[0] = shftreg+1;
-;                      if(x[0] != shftreg+1)
-;                          tmp3 = 2;    /* rom error */
-;                          ptr3 = x;    /* save address */
-;              if(tmp3 = 0) do checksum;
-;              if(checksum err) tmp3 = 3; /* checksum error */
-;** Look for s-record header
-LOAD10              equ       *
-                    ldaa      HOSTDEV
+;*repeat:                           /* look for s records */
+;*      if(hostdev != iodev) check abort;
+;*      a = hostin();
+;*      if(a = 'S')
+;*          a = hostin;
+;*          if(a = '1')
+;*              checksum = 0;
+;*              get byte count in b;
+;*              get base address in x;
+;*              while(byte count > 0)
+;*                  byte();
+;*                  x++; b--;
+;*                  if(tmp3=0)           /* no error */
+;*                      if(load) x[0] = shftreg+1;
+;*                      if(x[0] != shftreg+1)
+;*                          tmp3 = 2;    /* rom error */
+;*                          ptr3 = x;    /* save address */
+;*              if(tmp3 = 0) do checksum;
+;*              if(checksum err) tmp3 = 3; /* checksum error */
+
+          ; Look for s-record header
+
+LOAD10              lda       HOSTDEV
                     cmpa      IODEV
                     beq       LOAD11              ; jump if hostdev=iodev
                     jsr       CHKABRT             ; check for abort
-LOAD11              jsr       HOSTIN              ; read host
+LOAD11              bsr       HOSTIN              ; read host
                     tsta
                     beq       LOAD10              ; jump if no input
                     cmpa      #'S'
                     bne       LOAD10              ; jump if not S
-LOAD12              jsr       HOSTIN              ; read host
+LOAD12              bsr       HOSTIN              ; read host
                     tsta
                     beq       LOAD12              ; jump if no input
                     cmpa      #'9'
@@ -4800,20 +4478,23 @@ LOAD12              jsr       HOSTIN              ; read host
                     cmpa      #'1'
                     bne       LOAD10              ; jump if not S1
                     clr       TMP4                ; clear checksum
-;** Get Byte Count and Starting Address
+
+          ; Get Byte Count and Starting Address
+
                     jsr       BYTE
-                    ldab      SHFTREG+1
+                    ldb       SHFTREG+1
                     subb      #$2                 ; b = byte count
-                    jsr       BYTE
-                    jsr       BYTE
+                    bsr:2     BYTE
                     pshb                          ; save byte count
                     ldd       SHFTREG
                     addd      LDOFFST             ; add offset
                     xgdx                          ; x = address+offset
                     pulb                          ; restore byte count
                     dex                           ; condition for loop
-;** Get and Store Incoming Data Byte
-LOAD20              jsr       BYTE                ; get next byte
+
+          ; Get and Store Incoming Data Byte
+
+LOAD20              bsr       BYTE                ; get next byte
                     inx
                     decb                          ; check byte count
                     beq       LOAD30              ; if b=0, go do checksum
@@ -4821,38 +4502,39 @@ LOAD20              jsr       BYTE                ; get next byte
                     bne       LOAD10              ; jump if error flagged
                     tst       TMP2
                     bne       LOAD21              ; jump if verify
-                    ldaa      SHFTREG+1
+                    lda       SHFTREG+1
                     jsr       WRITE               ; load only
-LOAD21              cmpa      0,X                 ; verify ram location
+LOAD21              cmpa      ,x                  ; verify ram location
                     beq       LOAD20              ; jump if ram ok
-                    ldaa      #$02
-                    staa      TMP3                ; indicate rom error
+                    lda       #$02
+                    sta       TMP3                ; indicate rom error
                     stx       PTR3                ; save error address
                     bra       LOAD20              ; finish download
 
-;** Get and Test Checksum
+          ; Get and Test Checksum
 
 LOAD30              tst       TMP3
                     bne       LOAD10              ; jump if error already
-                    ldaa      TMP4
+                    lda       TMP4
                     inca                          ; do checksum
                     beq       LOAD10              ; jump if s1 record okay
-                    ldaa      #$03
-                    staa      TMP3                ; indicate checksum error
+                    lda       #$03
+                    sta       TMP3                ; indicate checksum error
                     bra       LOAD10
 
-;          if(a = '9')
-;              read rest of record;
-;              if(tmp3=2) return("[ptr3]");
-;              if(tmp3=1) return("rcv error");
-;              if(tmp3=3) return("checksum err");
-;              else return("done");
-LOAD90              jsr       BYTE
-                    ldab      SHFTREG+1           ; b = byte count
-LOAD91              jsr       BYTE
+;*          if(a = '9')
+;*              read rest of record;
+;*              if(tmp3=2) return("[ptr3]");
+;*              if(tmp3=1) return("rcv error");
+;*              if(tmp3=3) return("checksum err");
+;*              else return("done");
+
+LOAD90              bsr       BYTE
+                    ldb       SHFTREG+1           ; b = byte count
+LOAD91              bsr       BYTE
                     decb
                     bne       LOAD91              ; loop until end of record
-                    ldab      #$64
+                    ldb       #100
 LOAD91A             jsr       DLY10MS             ; delay 1 sec -let host finish
                     decb
                     bne       LOAD91A
@@ -4862,118 +4544,120 @@ LOAD91A             jsr       DLY10MS             ; delay 1 sec -let host finish
                     inc       AUTOLF              ; turn on autolf
                     jsr       TARGCO              ; disconnect sci (evb)
                     ldx       #MSG11              ; "done" default msg
-                    ldaa      TMP3
-                    cmpa      #$02
+                    lda       TMP3
+                    cmpa      #2
                     bne       LOAD92              ; jump not rom error
                     ldx       #PTR3
                     jsr       OUT2BSP             ; address of rom error
-                    bra       LOAD95
+                    rts
 
-LOAD92              cmpa      #$01
+LOAD92              cmpa      #1
                     bne       LOAD93              ; jump not rcv error
                     ldx       #MSG14              ; "rcv error"
                     bra       LOAD94
 
-LOAD93              cmpa      #$03
+LOAD93              cmpa      #3
                     bne       LOAD94              ; jump not checksum error
                     ldx       #MSG12              ; "checksum error"
 LOAD94              jsr       OUTSTRG
-LOAD95              rts
+                    rts
 
+;*******************************************************************************
+;* byte() -  Read 2 ascii bytes from host and
+;* convert to one hex byte.  Returns byte
+;* shifted into shftreg and added to tmp4.
+;*******************************************************************************
 
-;**********
-;  byte() -  Read 2 ascii bytes from host and
-; *convert to one hex byte.  Returns byte
-; *shifted into shftreg and added to tmp4.
-;**********
-BYTE                pshb
+BYTE                proc
+                    pshb
                     pshx
-BYTE0               jsr       HOSTIN              ; read host (1st byte)
+Loop@@              jsr       HOSTIN              ; read host (1st byte)
                     tsta
-                    beq       BYTE0               ; loop until input
+                    beq       Loop@@              ; loop until input
                     jsr       HEXBIN
-BYTE1               jsr       HOSTIN              ; read host (2nd byte)
+Loop2@@             jsr       HOSTIN              ; read host (2nd byte)
                     tsta
-                    beq       BYTE1               ; loop until input
+                    beq       Loop2@@             ; loop until input
                     jsr       HEXBIN
-                    ldaa      SHFTREG+1
+                    lda       SHFTREG+1
                     adda      TMP4
-                    staa      TMP4                ; add to checksum
+                    sta       TMP4                ; add to checksum
                     pulx
                     pulb
                     rts
 
+;*******************************************************************************
+;*   offset [<addr>]
+;* Specify offset to be added to s-record address when
+;* downloading from the host.
+;*  OFFSET                -show the current offset
+;*  OFFSET <data>         -current offset = data
+;*  OFFSET -<data>        -current offset = 0 - data
+;*******************************************************************************
+;*if(<data>) then offset = data;
+;*print(offset);
 
-;**********
-;   offset [<addr>]
-; Specify offset to be added to s-record address when
-; downloading from the host.
-;  OFFSET                -show the current offset
-;  OFFSET <data>         -current offset = data
-;  OFFSET -<data>        -current offset = 0 - data
-;**********
-; *if(<data>) then offset = data;
-; *print(offset);
-OFFSET              equ       *
+OFFSET              proc
                     clr       TMP4                ; minus indicator
                     jsr       WSKIP
-                    beq       OFFST3              ; jump if cr (no argument)
+                    beq       CR@@                ; jump if cr (no argument)
                     cmpa      #'-'
-                    bne       OFFST1              ; jump not -
+                    bne       NotMinus@@          ; jump not -
                     inc       TMP4                ; set minus sign flag
                     jsr       INCBUFF             ; move buffer pointer
                     jsr       WSKIP
-OFFST1              jsr       BUFFARG             ; read argument
+NotMinus@@          jsr       BUFFARG             ; read argument
                     tst       COUNT
-                    beq       OFFSTER             ; jump if bad argument
+                    beq       Fail@@              ; jump if bad argument
                     jsr       WSKIP
-                    bne       OFFSTER             ; jump if not cr
+                    bne       Fail@@              ; jump if not cr
                     ldd       SHFTREG             ; get offset value
                     tst       TMP4
-                    beq       OFFST2              ; jump if positive
-                    ldd       #$0000              ; negative - sub from 0
+                    beq       Positive@@          ; jump if positive
+                    clrd                          ; negative - sub from 0
                     subd      SHFTREG
-OFFST2              std       LDOFFST
-OFFST3              jsr       OUTCRLF             ; display current offset
+Positive@@          std       LDOFFST
+CR@@                jsr       OUTCRLF             ; display current offset
                     ldx       #LDOFFST
                     jsr       OUT2BSP
                     rts
 
-OFFSTER             ldx       #MSG9               ; "bad argument"
+Fail@@              ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-;**********
-;   register [<name>]  - prints the user regs
-; *and opens them for modification.  <name> is
-; *the first register opened (default = P).
-;   Subcommands:
-; [<nn>]<space>  Opens the next register.
-; [<nn>]<cr>     Return.
-;    The register value is only changed if
-;    <nn> is entered before the subcommand.
-;**********
-; *x[] = reglist
-; *a = wskip(); a = upcase(a);
-; *if(a != cr)
-;     while( a != x[0] )
-;          if( x[0] = "s") return(bad argument);
-;          x[]++;
-;     incbuff(); a = wskip();
-;     if(a != cr) return(bad argument);
+;*******************************************************************************
+;*   register [<name>]  - prints the user registers
+;*and opens them for modification.  <name> is
+;*the first register opened (default = P).
+;*   Subcommands:
+;* [<nn>]<space>  Opens the next register.
+;* [<nn>]<cr>     Return.
+;*    The register value is only changed if
+;*    <nn> is entered before the subcommand.
+;*******************************************************************************
+;*x[] = reglist
+;*a = wskip(); a = upcase(a);
+;*if(a != cr)
+;*     while( a != x[0] )
+;*          if( x[0] = "s") return(bad argument);
+;*          x[]++;
+;*     incbuff(); a = wskip();
+;*     if(a != cr) return(bad argument);
 
-REGISTER            ldx       #REGLIST
+REGISTER            proc
+                    ldx       #REGLIST
                     jsr       WSKIP               ; a = first char of arg
                     jsr       UPCASE              ; convert to upper case
                     cmpa      #$D
                     beq       REG4                ; jump if no argument
-REG1                cmpa      0,X
+Loop@@              cmpa      ,x
                     beq       REG3
-                    ldab      0,X
+                    ldb       ,x
                     inx
                     cmpb      #'S'
-                    bne       REG1                ; jump if not "s"
-REG2                ldx       #MSG9               ; "bad argument"
+                    bne       Loop@@              ; jump if not "s"
+Fail@@              ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
@@ -4981,19 +4665,19 @@ REG3                pshx
                     jsr       INCBUFF
                     jsr       WSKIP               ; next char after arg
                     pulx
-                    bne       REG2                ; jump if not cr
+                    bne       Fail@@              ; jump if not cr
 
-; *rprint();
-;     while(x[0] != "s")
-;          rprnt1(x);
-;          a = termarg();    /* read from terminal */
-;          if( ! dchek(a) ) return(bad argument);
-;          if(countu1 != 0)
-;               if(x[14] = 1)
-;                    regs[x[7]++ = shftreg;
-;               regs[x[7]] = shftreg+1;
-;          if(a = cr) break;
-; *return;
+;*rprint();
+;*     while(x[0] != "s")
+;*          rprnt1(x);
+;*          a = termarg();    /* read from terminal */
+;*          if( ! dchek(a) ) return(bad argument);
+;*          if(countu1 != 0)
+;*               if(x[14] = 1)
+;*                    regs[x[7]++ = shftreg;
+;*               regs[x[7]] = shftreg+1;
+;*          if(a = cr) break;
+;*return;
 
 REG4                jsr       RPRINT              ; print all registers
 REG5                jsr       OUTCRLF
@@ -5011,166 +4695,161 @@ REG6                psha
                     pshx
                     tst       COUNT
                     beq       REG8                ; jump if no input
-                    ldab      7,X                 ; get reg offset
-                    ldaa      14,X                ; byte size
-                    ldx       #REGS               ; user registers
+                    ldb       7,X                 ; get reg offset
+                    lda       14,X                ; byte size
+                    ldx       #REGISTERS          ; user registers
                     abx
                     tsta
                     beq       REG7                ; jump if 1 byte reg
-                    ldaa      SHFTREG
-                    staa      0,X                 ; put in top byte
+                    lda       SHFTREG
+                    sta       ,x                  ; put in top byte
                     inx
-REG7                ldaa      SHFTREG+1
-                    staa      0,X                 ; put in bottom byte
+REG7                lda       SHFTREG+1
+                    sta       ,x                  ; put in bottom byte
 REG8                pulx
                     pula
-                    ldab      0,X                 ; CHECK FOR REGISTER S
+                    ldb       ,x                  ; CHECK FOR REGISTER S
                     cmpb      #'S'
-                    beq       REG9                ; jump if "s"
+                    beq       :AnRTS              ; jump if "s"
                     inx                           ; point to next register
                     cmpa      #$D
                     bne       REG5                ; jump if not cr
-REG9                rts
+                    rts
 
-; Equates
-JPORTD              equ       $08
-JDDRD               equ       $09
-JBAUD               equ       $2B
-JSCCR1              equ       $2C
-JSCCR2              equ       $2D
-JSCSR               equ       $2E
-JSCDAT              equ       $2F
+;*******************************************************************************
+;* xboot [<addr1> [<addr2>]] - Use SCI to talk to an 'hc11 in
+;* boot mode.  Downloads bytes from addr1 thru addr2.
+;* Default addr1 = $C000 and addr2 = $C0ff.
+;*
+;* IMPORTANT:
+;* if talking to an 'A8 or 'A2: use either default addresses or ONLY
+;*    addr1 - this sends 256 bytes
+;* if talking to an 'E9: include BOTH addr1 and addr2 for variable
+;*    length
+;*******************************************************************************
 
-;************
-;  xboot [<addr1> [<addr2>]] - Use SCI to talk to an 'hc11 in
-; boot mode.  Downloads bytes from addr1 thru addr2.
-; Default addr1 = $C000 and addr2 = $C0ff.
-;
-; IMPORTANT:
-; if talking to an 'A8 or 'A2: use either default addresses or ONLY
-;    addr1 - this sends 256 bytes
-; if talking to an 'E9: include BOTH addr1 and addr2 for variable
-;    length
-;************
+          ; Get arguments
+          ; If no args, default $C000
 
-; *Get arguments
-; *If no args, default $C000
-BOOT                jsr       WSKIP
-                    bne       BOT1                ; jump if arguments
+BOOT                proc
+                    jsr       WSKIP
+                    bne       Args@@              ; jump if arguments
                     ldx       #$C0FF              ; addr2 default
                     stx       PTR5
                     ldy       #$C000              ; addr1 default
-                    bra       BOT2                ; go - use default address
+                    bra       Go@@                ; go - use default address
 
-; *Else get arguments
-BOT1                jsr       BUFFARG
+          ; Else get arguments
+
+Args@@              jsr       BUFFARG
                     tst       COUNT
-                    beq       BOTERR              ; jump if no address
+                    beq       Fail@@              ; jump if no address
                     ldy       SHFTREG             ; start address (addr1)
                     jsr       WSKIP
-                    bne       BOT1A               ; go get addr2
+                    bne       Addr2@@             ; go get addr2
                     sty       PTR5                ; default addr2...
                     ldd       PTR5                ; ...by taking addr1...
                     addd      #$FF                ; ...and adding 255 to it...
                     std       PTR5                ; ...for a total download of 256
-                    bra       BOT2                ; continue
+                    bra       Go@@                ; continue
 
-BOT1A               jsr       BUFFARG
+Addr2@@             jsr       BUFFARG
                     tst       COUNT
-                    beq       BOTERR              ; jump if no address
+                    beq       Fail@@              ; jump if no address
                     ldx       SHFTREG             ; end address (addr2)
                     stx       PTR5
                     jsr       WSKIP
-                    bne       BOTERR              ; go use addr1 and addr2
-                    bra       BOT2
+                    beq       Go@@
 
-BOTERR              ldx       #MSG9               ; "bad argument"
+Fail@@              ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
 
-; *Boot routine
-BOT2                ldab      #$FF                ; control character ($ff -> download)
-                    jsr       BTSUB               ; set up SCI and send control char
-;                        initializes X as register pointer
-; *Download block
-BLOP                ldaa      0,Y
-                    staa      JSCDAT,X            ; write to transmitter
-                    brclr     JSCSR,X,$80,*       ; wait for TDRE
+          ; Boot routine
+
+Go@@                ldb       #$FF                ; control character ($ff -> download)
+                    bsr       BTSUB               ; set up SCI and send control char
+                                                  ; initializes X as register pointer
+          ; Download block
+
+BLOP                lda       ,y
+                    sta       SCDR                ; write to transmitter
+                    bsr       WaitForSCI
                     cpy       PTR5                ; if last...
-                    beq       BTDONE              ; ...quit
+                    beq       :AnRTS              ; ...quit
                     iny                           ; else...
                     bra       BLOP                ; ...send next
 
-BTDONE              rts
+WaitForSCI          proc
+                    tst       SCSR
+                    bpl       WaitForSCI          ; wait for TDRE
 
-;************************************************
-; *Subroutine
-;  btsub   - sets up SCI and outputs control character
-; On entry, B = control character
-; On exit,  X = $1000
-;           A = $0C
-;***************************
+;*******************************************************************************
+;* TILDE - This command is put into the combuff by the
+;* load command so that extraneous carriage returns after
+;* the load will not hang up.
 
-BTSUB               equ       *
-                    ldx       #$1000              ; to use indexed addressing
-                    ldaa      #$02
-                    staa      JPORTD,X            ; drive transmitter line
-                    staa      JDDRD,X             ; high
-                    clr       JSCCR2,X            ; turn off XMTR and RCVR
-                    ldaa      #$22                ; BAUD = /16
-                    staa      JBAUD,X
-                    ldaa      #$0C                ; TURN ON XMTR & RCVR
-                    staa      JSCCR2,X
-                    stab      JSCDAT,X
-                    brclr     JSCSR,X,$80,*       ; wait for TDRE
+TILDE               proc
                     rts
 
+;*******************************************************************************
+;* Subroutine
+;* btsub   - sets up SCI and outputs control character
+;* On entry, B = control character
+;* On exit,  A = $0C
+;*******************************************************************************
 
-;***********
-; TILDE - This command is put into the combuff by the
-; load command so that extraneous carriage returns after
-; the load will not hang up.
-TILDE               rts
+BTSUB               proc
+                    lda       #$02
+                    sta       PORTD               ; drive transmitter line
+                    sta       DDRD                ; high
+                    clr       SCCR2               ; turn off XMTR and RCVR
+                    lda       #$22                ; BAUD = /16
+                    sta       BAUD
+                    lda       #$0C                ; TURN ON XMTR & RCVR
+                    sta       SCCR2
+                    stb       SCDR
+                    bra       WaitForSCI
 
-;******************
-;
-;       EVBTEST - This routine makes it a little easier
-;       on us to test this board.
-;
-;******************
+;*******************************************************************************
+;* EVBTEST - This routine makes it a little easier on us to test this board.
+;*******************************************************************************
 
-EVBTEST             ldaa      #$FF
-                    staa      $1000               ; Write ones to port A
+EVBTEST             proc
+                    lda       #$FF
+                    sta       PORTA               ; Write ones to port A
                     clr       AUTOLF              ; Turn off auto lf
                     jsr       HOSTCO              ; Connect host
                     jsr       HOSTINIT            ; Initialize host
-                    ldaa      #$7f
+                    lda       #$7f
                     jsr       HOSTOUT             ; Send Delete to Altos
-                    ldaa      #$0d
+                    lda       #CR
                     jsr       HOSTOUT             ; Send <CR>
                     inc       AUTOLF              ; Turn on Auto LF
                     ldx       #INBUFF+5           ; Point at Load message
                     stx       PTR0                ; Set pointer for load command
-                    ldy       #MSGEVB             ; Point at cat line
-LOOP                ldaa      0,Y                 ; Loop to xfer command line
+                    ldy       #Msg@@              ; Point at cat line
+Loop@@              lda       ,Y                  ; Loop to xfer command line
                     cmpa      #04                 ; Into buffalo line buffer
-                    beq       DONE                ; Quit on $04
-                    staa      0,X
+                    beq       Done@@              ; Quit on $04
+                    sta       ,X
                     inx                           ; next character
                     iny
-                    bra       LOOP
+                    bra       Loop@@
 
-DONE                clr       TMP2                ; Set load vs. verify
+Done@@              clr       TMP2                ; Set load vs. verify
                     jsr       LOAD3               ; Jmp into middle of load
                     lds       #STACK              ; Reset Stack
                     jmp       $C0B3               ; Jump to Downloaded code
 
-MSGEVB              fcc       'cat evbtest.out'
-                    fcb       $0D
-                    fcb       $04
+Msg@@               fcc       'cat evbtest.out',CR,EOT
 
-;*** Jump table ***
-                    org       ROMBS+$1F7C
+;*******************************************************************************
+; Jump table
+;*******************************************************************************
+
+                    org       ROM+$1F7C
+
 .WARMST             jmp       MAIN                ; warm start
 .BPCLR              jmp       BPCLR               ; clear breakpoint table
 .RPRINT             jmp       RPRINT              ; display user registers
@@ -5201,26 +4880,29 @@ MSGEVB              fcc       'cat evbtest.out'
 .INCHAR             jmp       INCHAR              ; wait for and input a char from term
 .VECINT             jmp       VECINIT             ; initialize RAM vector table
 
-                    org       ROMBS+$1FD6
-;*** Vectors ***
-VSCI                fdb       JSCI
-VSPI                fdb       JSPI
-VPAIE               fdb       JPAIE
-VPAO                fdb       JPAO
-VTOF                fdb       JTOF
-VTOC5               fdb       JTOC5
-VTOC4               fdb       JTOC4
-VTOC3               fdb       JTOC3
-VTOC2               fdb       JTOC2
-VTOC1               fdb       JTOC1
-VTIC3               fdb       JTIC3
-VTIC2               fdb       JTIC2
-VTIC1               fdb       JTIC1
-VRTI                fdb       JRTI
-VIRQ                fdb       JIRQ
-VXIRQ               fdb       JXIRQ
-VSWI                fdb       JSWI
-VILLOP              fdb       JILLOP
-VCOP                fdb       JCOP
-VCLM                fdb       JCLM
-VRST                fdb       BUFFALO
+                    #VECTORS
+                    org       ROM+$1FD6
+
+VSCI                dw        JSCI
+VSPI                dw        JSPI
+VPAIE               dw        JPAIE
+VPAO                dw        JPAO
+VTOF                dw        JTOF
+VTOC5               dw        JTOC5
+VTOC4               dw        JTOC4
+VTOC3               dw        JTOC3
+VTOC2               dw        JTOC2
+VTOC1               dw        JTOC1
+VTIC3               dw        JTIC3
+VTIC2               dw        JTIC2
+VTIC1               dw        JTIC1
+VRTI                dw        JRTI
+VIRQ                dw        JIRQ
+VXIRQ               dw        JXIRQ
+VSWI                dw        JSWI
+VILLOP              dw        JILLOP
+VCOP                dw        JCOP
+VCLM                dw        JCLM
+VRST                dw        BUFFALO
+
+                    end       :s19crc
