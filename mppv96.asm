@@ -52,17 +52,17 @@
 ;                   - Added OFFSET command for download offset capability.
 ;
 ;****************************************************
-;    Although the information contained herein,    
-;    as well as any information provided relative  
-;    thereto, has been carefully reviewed and is   
-;    believed accurate, Motorola assumes no        
-;    liability arising out of its application or   
-;    use, neither does it convey any license under 
-;    its patent rights nor the rights of others.   
+;    Although the information contained herein,
+;    as well as any information provided relative
+;    thereto, has been carefully reviewed and is
+;    believed accurate, Motorola assumes no
+;    liability arising out of its application or
+;    use, neither does it convey any license under
+;    its patent rights nor the rights of others.
 ;****************************************************
 
 ;***************
-;   EQUATES   
+;   EQUATES
 ;***************
 ; *Author EQU  Tony Fourcroy
 RAMBS               equ       $0000               ; start of ram
@@ -105,7 +105,7 @@ EOT                 equ       $04                 ; end of text/table
 SWI                 equ       $3F
 
 ;***************
-;     RAM     
+;     RAM
 ;***************
                     org       $2D
 ;*** Buffalo ram space ***
@@ -175,7 +175,7 @@ JCLM                rmb       3
 
 ;*****************
 ;
-; ROM starts here 
+; ROM starts here
 ;
 ;*****************
 
@@ -320,7 +320,7 @@ BUFISIT             ldaa      #$93
                     clr       AUTOLF
                     inc       AUTOLF              ; auto cr/lf = on
 
-; Determine type of external comm device - none, or acia 
+; Determine type of external comm device - none, or acia
 
                     clr       EXTDEV              ; default is none
 ;         LDAA HPRIO
@@ -352,7 +352,7 @@ BUFISIT             ldaa      #$93
 ;         LDAA #$02
 ;         STAA EXTDEV      external device is duart A
 
-; Find terminal port - SCI or external. 
+; Find terminal port - SCI or external.
 
 BUFF2               clr       IODEV
 ;         JSR  TARGCO    disconnect sci for evb board
@@ -379,7 +379,7 @@ SIGNON              jsr       INIT                ; initialize device
                     jsr       OUTSTRG
                     rts
 
-; Determine where host port should be. 
+; Determine where host port should be.
 
 BUFF4               clr       HOSTDEV             ; default - host = sci port
 ;         LDAA IODEV
