@@ -1,269 +1,437 @@
-; ' 6811 ML monitor'
-; (c) MARCH 1992 KEITH VASILAKES
-
-; This is a small ml monitor that I originally wrote on my Commodore 64
-; using a symbolic crossassembler I wrote in 6502 assembly. The assembler
-; was nice if nonstandard and lacking features such as conditional assembly
-; includes, etc. Shortly after finishing 68mon I broke down and
-; bought an Amiga 2000HD, this allowed me to use AS11 and the Buffalo
-; monitor. As it turns out Buffalo is huuuuge, designed to run on EVB
-; boards and doesn't like other systems. So I resurrected 68mon quickly
-; ported it to as11 and here is the result. Its not much but then again
-; its not supposed to be.
-
-; 68mon neither requires nor expects expansion ram and uses only five
-; bytes of zero page ram for variables,unless INTERRUPTS is defined which
-; uses another 48 bytes. 68mon keeps track of two stacks,
-; one monitor stack and one user stack. If the INTERRUPTS variable is
-; defined 68mon allows the use of all of the 68HC11 interrupts via a
-; pseudovector system ala Barfalo mon, 68mon however uses different memory
-; locations so be careful. (I implemented my vectors before noticing
-; Buffalo's pattern )
-; 68mon supports some standard monitor functions that are
-; listed below including an intel upload ( if defined that is ) for those
-; cases when intel hex makes more sense such as when an s19 file has been
-; converted to intel hex (such as for my EPROM blaster) and the s19 code
-; doesn't exist.
-
-; Note that 68mon has some usefull functions that can   be called from your
-; assembly language program. these functions include string IO character
-; conversion, and serial port support. See 68mon.h for a complete listing
-
-; Not supported is writing to the eeprom, changing the baud rate  There may
-; be other functions missing, oh well , feel free to add them, and your name
-; to the list at the top. just remember 68mon is supposed to be small and
-; light, make it possible to undefine unnessary code like INTERRUPTS for
-; those who need lots of room.
-
-; LEGAL STUFF:
-; This program is hereby released into the public domain. It my not be sold
-; in any form for any price. If included with hardware offered for sale,
-; the words "Pubic Domain Monitor 68Mon V1.2" must be clearly visable on all
-; sales literature.
-
-; Usage:
-; Assemble using AS11 or compatable assembler. 68Mon is setup to reside
-; at $E000 but isn"t too picky about where it's at. Programs written to
-; run under 68Mon must end in an SWI or the results are undefined ( crash )
-; note that as soon as an illegal opcode is encountered control is
-; returned to 68Mon. Be careful of page zero especially the stack
-; pointers at $00F8 and $00FA
-
+;*******************************************************************************
+;* Program   : 68MON.ASM
+;* Programmer: Keith Vasilakes    K?V   Original
+;*           : Tony Papadimitriou TGP   Modified
+;* Purpose   : 6811 ML Monitor
+;* Language  : Motorola/Freescale/NXP 68HC11 Assembly Language (aspisys.com/ASM11)
+;* Status    : FREEWARE
+;* History   : 92.03.?? v1.00 K?V Original
+;*           : 98.08.?? v1.01 TGP Adapted to ASM11 by Tony Papadimitriou
+;*           : 00.10.20       TGP Added NOICE support
+;*           : 00.10.26 v1.02 TGP On zero S9 address, do not execute user code
+;*           : 11.02.20       Minor changes in some messages
+;*           : 12.03.09       Minor changes
+;*           : 17.02.08       Adapted to current coding conventions
+;*           : 17.02.09       BugFix: Infinite ClearRAM loop during startup
+;*******************************************************************************
+;
+;                 '6811 ML Monitor'
+;            (c) MARCH 1992 KEITH VASILAKES
+;            (c) AUGUST 1998 TONY PAPADIMITRIOU
+;
+;  Modified for ASM11 by Tony Papadimitriou, August 1998
+;  Optimized and changed a few bits without altering functionality.
+;  (Also, modified to work with the 811E2's memory map.)
+;
+;  Assemble using ASM11 v9.70 or later. 68Mon is setup to reside
+;  at $F800 but isn't too picky about where it's at. Programs written to
+;  run under 68Mon must end in an SWI or the results are undefined (crash)
+;  note that as soon as an illegal opcode is encountered control is
+;  returned to 68Mon. Be careful of page zero especially the stack
+;  pointers at $00F8 and $00FA
+;
 ; V1.1       ADD S19 UPLOAD  **************DONE*******************
 ; V1.2       ADD HELP ( LIST COMMANDS ) ***DONE*****************
-; V1.?       ADD XON / XOFF ($13 = XOFF, $11 = XON )  YUCK !!!
+; V1.3       Tony Papadimitriou's modified version (also, adapted to ASM11)
+;
+;  [THE FOLLOWING COMMENTS ARE FROM THE ORIGINAL AUTHOR]
+;  This is a small ML monitor that I originally wrote on my Commodore 64
+;  using a symbolic cross-assembler I wrote in 6502 assembly. The assembler
+;  was nice if non-standard and lacking features such as conditional assembly
+;  includes, etc. Shortly after finishing 68mon I broke down and
+;  bought an Amiga 2000HD, this allowed me to use AS11 and the Buffalo
+;  monitor. As it turns out Buffalo is huuuuge, designed to run on EVB
+;  boards and doesn't like other systems. So I resurrected 68mon, quickly
+;  ported it to as11, and here is the result. It's not much but then again
+;  it's not supposed to be.
+;
+;  68mon neither requires nor expects expansion RAM and uses only five
+;  bytes of zero page RAM for variables, unless INTERRUPTS is defined which
+;  uses another 48 bytes. 68mon keeps track of two stacks,
+;  one monitor stack and one user stack. If the INTERRUPTS variable is
+;  defined 68mon allows the use of all of the 68HC11 interrupts via a
+;  pseudovector system a la Barfalo mon, 68mon however uses different memory
+;  locations so be careful.  (I implemented my vectors before noticing
+;  Buffalo's pattern.)
+;
+;  68mon supports some standard monitor functions that are
+;  listed below including an intell upload (if defined, that is) for those
+;  cases when intell hex makes more sense such as when an s19 file has been
+;  converted to intel hex (such as for my EPROM blaster) and the s19 code
+;  doesn't exist.
+;
+;  Note that 68mon has some useful functions that can be called from your
+;  assembly language program.  These functions include string I/O character
+;  conversion, and serial port support. See 68mon.h for a complete listing.
+;
+;  Not supported is writing to the eeprom, changing the baud rate.  There may
+;  be other functions missing, oh well, feel free to add them, and your name
+;  to the list at the top. just remember 68mon is supposed to be small and
+;  light, make it possible to undefine unnessary code like INTERRUPTS for
+;  those who need lots of room.
+;
+;
+;LEGAL STUFF:
+;  This program is hereby released into the public domain. It may not be sold
+;  in any form for any price. If included with hardware offered for sale,
+;  the words "Public Domain Monitor 68Mon V1.2" must be clearly visible on all
+;  sales literature.
 
-ROM                 equ       $E000               ; start of eprom
-PORTD               equ       $1008
-DDRD                equ       $1009
-SPCR                equ       $1028
-BAUD                equ       $102B
-SCCR1               equ       $102C
-SCCR2               equ       $102D
-SCSR                equ       $102E
-SCDAT               equ       $102F
+VERSION             equ       120                 ;version as x.xx
 
-                    org       $0000               ; pseudo interrupts similar to Barfalomon but notice the different adresses and order !
+#ifdef ?
+  #Message +===================================================
+  #Message | Available conditionals (for use with -Dx option)
+  #Message +===================================================
+  #Message | DEBUG: for SIM11x runs (faster bps, etc.)
+  #Message | TONYP: for Tony's modifications
+  #Message | GREEK: for Greek Language menus
+  #Message | ECHO.: for enabling SCI echo
+  #Message | WSI..: for the WSI Development Kit
+  #Message | NOICE: for the NOICE Debugger
+  #Message | F1...: for F1 with 32KB ROM and 32KB RAM
+  #Message | RAMF1: for F1 with virtual ROM
+  #Message | ROM..:<value> to change ROM location
+  #Message +===================================================
+  #Fatal Run ASM11 -Dx (where x is any of the above)
+#endif
+                    #ListOff
+          #ifdef F1
+ROM                 def       $F800
+                    #Uses     exp-f1.inc
+          #else ifdef WSI
+                    #Uses     wsi.inc             ;equates for the WSI Development Kit
+          #else ifdef NOICE
+                    #Uses     noice.inc
+          #else ifdef RAMF1
+MHZ                 def       16
+                    #Uses     ram-f1.inc
+          #else
+                    #Uses     811e2.inc           ;equates for the M68HC811E2
+          #endif
+                    #ListOn
+          #ifdef TONYP
+                    #Message  Tony's mods enabled
+          #endif
 
-PSCI                equ       0                   ; serial comunication interface (RS232)
-PSPI                equ       0003                ; sync serial port
-PPAC                equ       0006                ; pulse accumulator input edge
-PPACOV              equ       0009                ; "       " overflow
-PTOF                equ       $000C               ; timer overflow
-PTIOC45             equ       $000F               ; in capt 4 / out comp 5
-PTOC4               equ       $0012               ; output compare 4
-PTOC3               equ       $0015               ; "      " 3
-PTOC2               equ       $0018               ; "      " 2
-PTOC1               equ       $001B               ; "      " 1
-PTIC3               equ       $001E               ; input capture 3
-PTIC2               equ       $0021               ; "      " 2
-PTIC1               equ       $0024               ; "      " 1
-PRTI                equ       $0027               ; real time interrupt
-PIRQ                equ       $002A               ; irq
-PXIRQ               equ       $002D               ; xirq
+          #ifdef DEBUG
+                    #Message  DEBUG Mode (do NOT burn device)
+SPEED               def       $00                 ;Max bps rate for SIM11E
+          #else ifdef __WSI__
+SPEED               def       $04                 ;9600 bps rate
+          #else if MHZ = 8
+SPEED               def       $30                 ;9600 bps rate
+          #else if MHZ = 16
+SPEED               def       $30                 ;19200 bps rate
+          #endif
 
-                    org       ROM
+          #ifndef SPEED
+                    #Error    SPEED not defined
+          #endif
 
-SP                  equ       $20
-CR                  equ       $0D
-LF                  equ       $0A
-ESC                 equ       $1B
-; XON               equ       $11                 ; cant quite figure this out yet ????
-; XOFF              equ       $13
+;*******************************************************************************
+                    #RAM
+;*******************************************************************************
+
+;pseudo interrupts similar to Barfalomon but notice the different addresses and order !
+
+PSCI                rmb       3                   ;serial communication interface (RS232)
+PSPI                rmb       3                   ;sync serial port
+PPAC                rmb       3                   ;pulse accumulator input edge
+PPACOV              rmb       3                   ;  "       "       overflow
+PTOF                rmb       3                   ;timer overflow
+PTIOC45             rmb       3                   ;in capt 4 / out comp 5
+PTOC4               rmb       3                   ;output compare 4
+PTOC3               rmb       3                   ;  "      "     3
+PTOC2               rmb       3                   ;  "      "     2
+PTOC1               rmb       3                   ;  "      "     1
+PTIC3               rmb       3                   ;input capture  3
+PTIC2               rmb       3                   ;  "      "     2
+PTIC1               rmb       3                   ;  "      "     1
+PRTI                rmb       3                   ;real time interrupt
+PIRQ                rmb       3                   ;irq
+PXIRQ               rmb       3                   ;xirq
+
+NUMBER_OF_VECTORS   equ       *-PSCI/3
+
 ;*************************ZERO PAGE USAGE**********
-TEMPX               equ       $00FE
-FLAG                equ       $00FD
-CHECK               equ       $00FC               ; USED FOR SUMCHECK
-S19FLG              equ       $00FB               ; CURRENT LINE IS S9 RECORD
-S0FLAG              equ       $00FA               ; CURRENT LINE IS S0 RECORD
 
-MONSTACK            equ       $00F9
-USRSTACK            equ       $00F7
+TEMPX               rmb       2                   ;$00FE
+FLAG                rmb       1                   ;$00FD
+CHECK               rmb       1                   ;$00FC  ;USED FOR SUMCHECK
+S19FLG              rmb       1                   ;$00FB  ;CURRENT LINE IS S9 RECORD
+S0FLAG              rmb       1                   ;$00FA  ;CURRENT LINE IS S0 RECORD
+
+;MONSTACK           rmb       2                   ;$00F9
+USRSTACK            rmb       2                   ;$00F7
+
 ;**************************************************
-STACK               equ       $00F6
-USTACK              equ       $00D0
 
-TRAPP               fcb       CR,LF
-                    fcb       CR,LF
-                    fcb       '    ******** ILLEGAL OPCODE TRAP !!! ********'
-                    fcb       CR,LF
-                    fcb       0
-PROMPT              fcb       CR,LF
-                    fcb       '               68Mon V1.2 (C) 1992 Keith Vasilakes'
-                    fcb       CR,LF
-                    fcb       0
-COLD                lds       #STACK
+                    rmb       20                  ;User Stack
+USTACK              equ       *                   ;$00D0
+
+;*******************************************************************************
+
+                    #ROM
+          #ifdef GREEK
+                    #Message  Greek Language
+
+TRAPP               fcs       LF,'* ΠΑΓΙΔΑ ΑΚΥΡΩΝ ΕΝΤΟΛΩΝ *',LF
+PROMPT              fcc       LF,'68Mon v{VERSION(2)} (c) 1992-{:year} Κηθ Βασιλάκης',LF
+                    fcs       '68Mon v{VERSION+1(2)} (c) {:year} (ASM11) από Αντώνη Παπαδημητρίου',LF
+          #else
+                    #Message  English Language
+
+TRAPP               fcs       LF,'* ILLEGAL OPCODE TRAP *',LF
+PROMPT              fcc       LF,'68Mon v{VERSION(2)} (c) 1992-{:year} Keith Vasilakes',LF
+                    fcs       '68Mon v{VERSION+1(2)} (c) {:year} (ASM11) by Tony Papadimitriou',LF
+          #endif
+Prompt2             fcs       CR,'68MON-->'
+FormFeed            fcs       ASCII_FF
+
+;***************** THIS IS WHERE IT ALL STARTS *****************
+
+COLD                proc
+                    sei                           ;Disable interrupts (for no-reset start)
+                    lds       #STACKTOP
+
+          #ifdef __ASPISYS__
+                    @SetChipSelects
+          #endif
+
+          #ifdef __WSI__
+                    jsr       SetupWSI
+          #endif
+                    ldx       #REGS
                     lda       #$20
-                    oraa      SPCR
-                    sta       SPCR
-                    lda       #$30
-                    sta       BAUD
-                    lda       #$0C
-                    sta       SCCR2
-                    clr       FLAG                ; CLR ECCO (BIT 7 ) = ECCO CHARS
+                    ora       [SPCR,x
+                    sta       [SPCR,x
 
-                    lda       #$7E
+                    clr       [SCCR1,x
+                    lda       #SPEED
+                    sta       [BAUD,x
+                    lda       #%1100              ;TX/RX enabled in polled mode
+                    sta       [SCCR2,x
+                    clr       FLAG                ;CLR ECHO (BIT 7 ) = ECHO CHARS
+
+                    ldx       #STACKTOP           ;Clear all RAM
+ClearRAM@@          clr       ,x
+                    dex
+                    cmpx      #RAM_END
+                    bhs       DoneClearRAM@@
+                    cmpx      #RAM
+                    bhs       ClearRAM@@
+DoneClearRAM@@
+
+; Initialize all pseudovectors to an RTI instruction
+
+          #ifdef TONYP
+                    ldb       #NUMBER_OF_VECTORS  ;number of entries to point
+                    ldy       #PSEUDOVECT         ;.. to this address
+                    lda       #JMP_OPCODE         ;Get the JMP opcode
+                    ldx       #PSCI               ;first vector
+SetVectors@@        sta       ,x
+                    sty       1,x
+                    inx:3
+                    decb
+                    bne       SetVectors@@
+          #else
+                    lda       #JMP_OPCODE         ;Get the JMP opcode
                     ldx       #PSEUDOVECT
-                    stx       PSCI+1
-                    sta       PSCI
-                    stx       PSPI+1
-                    sta       PSPI
-                    stx       PPAC+1
-                    sta       PPAC
-                    stx       PPACOV+1
-                    sta       PPACOV
-                    stx       PTOF+1
-                    sta       PTOF
-                    stx       PTIOC45+1
-                    sta       PTIOC45
-                    stx       PTOC4+1
-                    sta       PTOC4
-                    stx       PTOC3+1
-                    sta       PTOC3
-                    stx       PTOC2+1
-                    sta       PTOC2
-                    stx       PTOC1+1
-                    sta       PTOC1
-                    stx       PTIC3+1
-                    sta       PTIC3
-                    stx       PTIC2+1
-                    sta       PTIC2
-                    stx       PTIC1+1
-                    sta       PTIC1
-                    stx       PRTI+1
-                    sta       PRTI
-                    stx       PIRQ+1
-                    sta       PIRQ
-                    stx       PXIRQ+1
-                    sta       PXIRQ
 
+?                   macro     Vector
+                    mreq      1:Vector
+                    stx       ~1~+1
+                    sta       ~1~
+                    endm
+
+                    @?        PSCI
+                    @?        PSPI
+                    @?        PPAC
+                    @?        PPACOV
+                    @?        PTOF
+                    @?        PTIOC45
+                    @?        PTOC4
+                    @?        PTOC3
+                    @?        PTOC2
+                    @?        PTOC1
+                    @?        PTIC3
+                    @?        PTIC2
+                    @?        PTIC1
+                    @?        PRTI
+                    @?        PIRQ
+                    @?        PXIRQ
+          #endif
+
+          #ifdef DEBUG
+                    clrd
+                    clrx
+                    clry
+          #endif
                     cli
 
+                    ldx       #FormFeed
+                    bsr       PRINT
                     bra       MON68
 
-MONSWI              sts       USRSTACK
-                    lds       #STACK
+;*******************************************************************************
+
+MONSWI              proc
+                    sts       USRSTACK
+                    lds       #STACKTOP
                     bra       MON68
 
-MONTRAP             sts       USRSTACK
-                    lds       #STACK
+;*******************************************************************************
+
+MONTRAP             proc
+                    sts       USRSTACK
+                    lds       #STACKTOP
                     ldx       #TRAPP
                     bsr       PRINT
-MON68               ldx       #PROMPT             ; SWI CALLS MONITOR
+;                   bra       MON68
+
+;*******************************************************************************
+
+MON68               proc
+                    ldx       #PROMPT             ;SWI CALLS MONITOR
                     bsr       PRINT
                     jsr       REG1
-MAIN                lda       #'>'
-                    jsr       CHROUT
+;                   bra       MainLoop
+
+;*******************************************************************************
+
+MainLoop            proc
+                    ldx       #Prompt2
+                    bsr       PRINT
                     ldb       #3
                     ldx       #CMDTAB
                     jsr       CHRIN
-                    jsr       TOUPPER
                     cmpa      #CR
-                    bne       LOOP
+                    bne       Loop@@
                     lda       #LF
                     jsr       CHROUT
-                    bra       MAIN
-
-LOOP                cmpa      0,x
+                    bra       MainLoop
+Loop@@              cmpa      ,x
                     beq       CALL
-                    tst       0,x
-                    beq       NOTFOUND            ; END OF TABLE
+                    tst       ,x
+                    beq       NotFound@@          ;END OF TABLE
                     abx
-                    bra       LOOP
+                    bra       Loop@@
 
-NOTFOUND            bsr       ERROR
-                    bra       MAIN
+NotFound@@          bsr       ERROR
+                    bra       MainLoop
 
-ERROR               lda       #'?'
-                    jsr       CHROUT
-                    lda       #CR
-                    jsr       CHROUT
-                    lda       #LF
-                    jsr       CHROUT
+;*******************************************************************************
+
+cmd                 macro     CmdLetter,CmdAddress
+                    mreq      1,2:CmdLetter,CmdAddress
+                    fcb       \@~1~\@
+                    fdb       ~2~
+                    endm
+
+CMDTAB              @cmd      M,MEMEX
+                    @cmd      G,GO
+                    @cmd      U,UPLOAD
+                    @cmd      F,FILL
+                    @cmd      R,REGISTER
+                    @cmd      C,CONTINUE
+                    @cmd      S,S19UPLOAD
+                    @cmd      ?,HELP
+                    fcb       NUL                 ;Marks end of command table
+
+;*******************************************************************************
+
+ERROR               proc
+                    pshx
+                    ldx       #Msg@@
+                    bsr       PRINT
+                    pulx
                     sec
                     rts
 
-CALL                ldx       1,x
-                    jsr       0,x
-                    bra       MAIN
+          #ifdef GREEK
+Msg@@               fcs       '*ΛΑΘΟΣ*',LF
+          #else
+Msg@@               fcs       '*ERROR*',LF
+          #endif
 
-PRINT               lda       0,x
-                    beq       PREND
+;*******************************************************************************
+
+CALL                proc
+                    ldx       1,x
+                    jsr       ,x
+                    bra       MainLoop
+
+;*******************************************************************************
+
+PRINT               proc
+Loop@@              lda       ,x
+                    beq       Done@@
                     jsr       CHROUT
                     inx
-                    bra       PRINT
+                    bra       Loop@@
+Done@@              equ       :AnRTS
 
-PREND               rts
+;*******************************************************************************
 
-INWORD              pshb
-                    psha
+INWORD              proc
+                    pshd
                     bsr       INBYTE
-                    bcs       WRDERR
+                    bcs       Fail@@
                     tab
                     bsr       INHEX
-                    bcs       WRDERR
-                    psha
+                    bcs       Fail@@
+                    psha                          ;IS THIS IN THE CORRECT ORDER?
                     pshb
                     pulx
-                    pula
-                    pulb
+                    puld
                     rts
 
-WRDERR              pula
-                    pulb
+Fail@@              puld
                     bra       ERROR
 
-OUTWORD             psha
+;*******************************************************************************
+
+OUTWORD             proc
+                    psha
                     pshx
                     pula
-                    bsr       OUTHEX              ; PRINT 2 HEX CHRS
+                    bsr       OUTHEX              ;PRINT 2 HEX CHRS
                     pula
-                    bsr       OUTBYTE             ; PRINT 2 HEX CHRS + SPACE
+                    bsr       OUTBYTE             ;PRINT 2 HEX CHRS + SPACE
                     pula
                     rts
 
-INBYTE              bsr       INHEX               ; ALLOW LEADING SPACES
-                    bcc       INB1
-                    cmpa      #SP
-                    beq       INBYTE
-INB1                rts                           ; RETURNS W CARRY SET IF NOT SP OR HEX
+;*******************************************************************************
 
-INHEX               pshb
-INH1                bsr       CHRIN
+INBYTE              proc
+                    bsr       INHEX               ;ALLOW LEADING SPACES
+                    bcc       Done@@
+                    cmpa      #' '
+                    beq       INBYTE
+Done@@              rts                           ;RETURNS W CARRY SET IF NOT SP OR HEX
+
+;*******************************************************************************
+
+INHEX               proc
+                    pshb
+                    bsr       CHRIN
                     bsr       FASCII
-                    bcs       INHERR
+                    bcs       Done@@
                     tab
                     bsr       CHRIN
                     bsr       FASCII
-                    bcs       INHERR
+                    bcs       Done@@
                     aslb:4
                     aba
                     clc
-INHERR              pulb
-                    rts                           ; RETURNS WITH ERROR CHAR IN ACCA
+Done@@              pulb
+                    rts                           ;RETURNS WITH ERROR CHAR IN ACCA
 
-OUTHEX              psha
-                    psha
+;*******************************************************************************
+
+OUTHEX              proc
+                    psha:2
                     anda      #$F0
                     lsra:4
                     bsr       TOASCII
@@ -271,204 +439,240 @@ OUTHEX              psha
                     pula
                     anda      #$0F
                     bsr       TOASCII
-                    bsr       CHROUT
-                    pula
-                    rts
+                    bra       OUTBYTE2
 
-OUTBYTE             bsr       OUTHEX
+;*******************************************************************************
+
+OUTBYTE             proc
+                    bsr       OUTHEX
                     psha
-                    lda       #SP
-                    bsr       CHROUT
+                    lda       #' '
+OUTBYTE2            bsr       CHROUT
                     pula
                     rts
 
-FASCII              bsr       TOUPPER
-                    cmpa      #$30
-                    blo       GETEND
-                    cmpa      #$39
-                    bls       FASC1
-                    cmpa      #$41
-                    blo       GETEND
-                    cmpa      #$46
-                    bhi       GETEND
-                    suba      #$07
-FASC1               suba      #$30
+;*******************************************************************************
+
+FASCII              proc
+                    bsr       ToUpper
+
+                    cmpa      #'0'
+                    jlo       ERR
+
+                    cmpa      #'9'
+                    bls       Go@@
+
+                    cmpa      #'A'
+                    blo       ERR
+
+                    cmpa      #'F'
+                    bhi       ERR
+
+                    adda      #'0'-'A'+10
+
+Go@@                suba      #'0'
                     clc
                     rts
 
-TOASCII             clc
+;*******************************************************************************
+
+TOASCII             proc
                     adda      #$90
                     daa
                     adca      #$40
                     daa
                     rts
 
-TOUPPER             cmpa      #$61
-                    blo       END
-                    cmpa      #$7A
-                    bhi       END
-                    suba      #$20
-END                 rts
+;*******************************************************************************
 
-TOLOWER             cmpa      #$41
-                    blo       END1
-                    cmpa      #$5A
-                    bhi       END1
-                    adda      #$20
-END1                rts
+ToUpper             proc
+                    cmpa      #'a'
+                    blo       Done@@
 
-CHRIN               bsr       GETIN
-                    bcs       CHRIN
+                    cmpa      #'z'
+                    bhi       Done@@
+
+                    adda      #'A'-'a'
+Done@@              rts
+
+;*******************************************************************************
+
+ToLower             proc
+                    cmpa      #'A'
+                    blo       Done@@
+
+                    cmpa      #'Z'
+                    bhi       Done@@
+
+                    adda      #'a'-'A'
+Done@@              rts
+
+;*******************************************************************************
+
+CHRIN               proc
+Loop@@              bsr       GetChar
+                    bcs       Loop@@
+
+                    cmpa      #BS                 ;backspace not recognized
+                    beq       Loop@@
+
+                    bsr       ToUpper
+
                     tst       FLAG
-                    bmi       END1
+                    bmi       Done@@
                     bra       CHROUT
 
-GETIN               lda       SCSR
+Done@@              equ       :AnRTS
+
+;*******************************************************************************
+
+CHROUT.TWICE        proc
+                    bsr       CHROUT              ;display the character twice
+;                   bra       CHROUT
+
+;*******************************************************************************
+
+CHROUT              proc
+Loop@@              bsr       PutChar
+                    bcs       Loop@@
+                    rts
+
+;*******************************************************************************
+
+GetChar             lda       SCSR
                     anda      #$20
-                    beq       GETEND
-                    lda       SCDAT
+                    beq       ERR
+                    lda       SCDR
                     clc
                     rts
 
-GETEND              sec
-                    rts
+;*******************************************************************************
 
-CHROUT              bsr       PUTOUT
-                    bcs       CHROUT
-                    rts
+PutChar             proc
+                    cmpa      #LF
+                    bne       Send@@
 
-PUTOUT              pshb
-PUTOUT1             ldb       SCSR
-                    andb      #$80
-                    beq       PUTOUT2
-                    sta       SCDAT
-                    pulb
+                    lda       #CR
+                    bsr       Send@@
+                    lda       #LF
+
+Send@@              tst       SCSR
+                    bpl       ERR
+                    sta       SCDR
                     clc
                     rts
 
-PUTOUT2             pulb
-                    sec
-                    rts
+;*******************************************************************************
 
-CMDTAB              fcb       'M'
-                    fdb       MEMEX
-                    fcb       'G'
-                    fdb       GO
-                    fcb       'U'
-                    fdb       UPLOAD
-                    fcb       'F'
-                    fdb       FILL
-                    fcb       'R'
-                    fdb       REGISTER
-                    fcb       'C'
-                    fdb       CONTINUE
-                    fcb       'S'
-                    fdb       S19UPLOAD
-                    fcb       '?'
-                    fdb       HELP
-                    fcb       0
-
-MEMEX               jsr       INWORD
+MEMEX               proc
+                    jsr       INWORD
                     bcs       ERR
                     stx       TEMPX
-MEMX                jsr       INBYTE              ; CHANGE MEMORY
+Loop@@              jsr       INBYTE              ;CHANGE MEMORY
                     bcs       READ0
-                    sta       0,x
+                    sta       ,x
                     inx
-                    bra       MEMX
+                    bra       Loop@@
 
-READ0               cmpa      #ESC
-                    beq       ERR
-                    ldx       TEMPX
+;*******************************************************************************
+
+LINEFEED            proc
                     lda       #CR
                     bsr       CHROUT
                     lda       #LF
-                    bsr       CHROUT
-READ                jsr       OUTWORD             ; PRINT ADDRESS
-                    ldb       #$10                ; NUMBER OF BYTES PER LINE
-READ1               lda       0,x
+                    bra       CHROUT
+
+FILLERR             pulx
+ERR                 sec
+                    rts
+
+;*******************************************************************************
+
+READ0               cmpa      #ESC
+                    beq       ERR
+
+                    ldx       TEMPX
+                    bsr       LINEFEED
+READ                jsr       OUTWORD             ;PRINT ADDRESS
+                    ldb       #16                 ;NUMBER OF BYTES PER LINE
+READ1               lda       ,x
                     jsr       OUTBYTE
                     inx
                     decb
                     bne       READ1
+
                     ldx       TEMPX
-                    ldb       #$10
-READ2               lda       0,x
-                    cmpa      #SP
+                    ldb       #16
+READ2               lda       ,x
+                    cmpa      #' '
                     blo       READ4
-                    cmpa      #$80
-                    bls       READ3
+          #ifdef GREEK
+                    bra       READ3               ;do not mask high ASCII chars
+          #else
+                    tsta                          ;mask 8-bit ASCII chars
+                    bpl       READ3
+          #endif
 READ4               lda       #'.'
 READ3               bsr       CHROUT
                     inx
                     decb
                     bne       READ2
                     stx       TEMPX
-                    jsr       GETIN               ; PRINT DATA UNTIL KEYPRESS
+                    bsr       GetChar             ;PRINT DATA UNTIL KEYPRESS
                     bcs       READ0
-READ5               lda       #CR
-                    bsr       CHROUT
-                    lda       #LF
-                    jsr       CHROUT
-                    rts
+READ5               bra       LINEFEED
 
-FILLERR             pulx
-ERR                 sec
-                    rts
+;*******************************************************************************
 
-FILL                jsr       INWORD              ; GET FROM ADDRESS
+FILL                proc
+                    jsr       INWORD              ;GET FROM ADDRESS
                     bcs       ERR
                     pshx
-                    jsr       INWORD              ; GET TO ADDRESS
+                    jsr       INWORD              ;GET TO ADDRESS
                     bcs       FILLERR
                     stx       TEMPX
-                    jsr       INBYTE              ; GET FILL VALUE
-                    bcc       FILLX
-                    lda       #$FF                ; IF NO FILL VALUE,FILL WITH NOP'S
-FILLX               pulx
-FILL1               sta       0,x
+                    jsr       INBYTE              ;GET FILL VALUE
+                    bcc       Go@@
+                    lda       #-1                 ;IF NO FILL VALUE,FILL WITH NOP'S
+Go@@                pulx
+Loop@@              sta       ,x
                     inx
                     cpx       TEMPX
-                    bls       FILL1
-                    lda       #CR
-                    jsr       CHROUT
-                    lda       #LF
-                    jmp       CHROUT
+                    bls       Loop@@
+                    bra       LINEFEED
 
-UPLOAD              lda       FLAG
+;*******************************************************************************
+
+UPLOAD              proc
+                    lda       FLAG
                     psha
-                    oraa      #%10000000          ; BIT 7 SET = NO ECCO
+                    ora       #Bit7.              ;BIT 7 SET = NOECHO
                     sta       FLAG
-                    lda       #CR
+                    bsr       LINEFEED
+                    lda       #'.'                ;print a dot
                     jsr       CHROUT
-                    lda       #LF
-                    jsr       CHROUT
-                    lda       #'.'
-                    jsr       CHROUT
-UPSTART             jsr       CHRIN
+UPSTART             jsr       CHRIN               ;get a character
                     bcs       ERROR1
                     cmpa      #':'
                     bne       UPEND
                     clr       CHECK
-                    jsr       INBYTE              ; GET NUM OF BYTES
+                    jsr       INBYTE              ;GET NUM OF BYTES
                     bcs       ERROR1
-                    psha                          ; SAVE NUMBER OF BYTES (WILL BE USED IN ACCB LATER)
+                    psha                          ;SAVE NUMBER OF BYTES (WILL BE USED IN ACCB LATER)
                     adda      CHECK
                     sta       CHECK
-                    jsr       INWORD              ; GET ADDRESS
+                    jsr       INWORD              ;GET ADDRESS
                     bcc       UPOK
                     pula
                     bra       ERROR1
-
 UPOK                pshx
                     xgdx
                     adda      CHECK
+                    aba
                     sta       CHECK
-                    addb      CHECK
-                    stb       CHECK
                     pulx
-                    pulb                          ; GET BACK NUMBER OF FCBS
-                    jsr       INBYTE              ; GET NULL (?) FCB
+                    pulb                          ;GET BACK NUMBER OF FCBs
+                    jsr       INBYTE              ;GET NULL (?) FCB
                     adda      CHECK
                     sta       CHECK
                     incb
@@ -476,22 +680,19 @@ UPLOAD1             jsr       INBYTE
                     bcs       ERROR1
                     decb
                     beq       END2
-                    sta       0,x
+                    sta       ,x
                     adda      CHECK
                     sta       CHECK
                     inx
                     bra       UPLOAD1
-
 END2                neg       CHECK
                     cmpa      CHECK
                     bne       ERROR1
-                    jsr       CHRIN               ; GETCR AT END OF LINE
+                    jsr       CHRIN               ;GET CR AT END OF LINE
                     bra       UPSTART
 
 UPEND               pula
-                    sta       FLAG
-                    lda       #1
-                    oraa      FLAG
+                    ora       #1
                     sta       FLAG
                     rts
 
@@ -499,212 +700,233 @@ ERROR1              pula
                     sta       FLAG
                     jmp       ERROR
 
-REGNAME             fcb       '  SXHINZVC  AB AA  IX   IY   PC   SP'
-                              ; 12345678  12 12 1234 1234 1234 1234
-                    fcb       CR,LF
-                    fcb       0
+;*******************************************************************************
+
 REGISTER            jsr       CHRIN
                     cmpa      #CR
-                    beq       REG1
-                    bra       GOERR
+                    bne       :AnRTS
 
 REG1                lda       #LF
                     jsr       CHROUT
                     ldx       #REGNAME
                     jsr       PRINT
-                    lda       #SP
-                    jsr       CHROUT
-                    jsr       CHROUT
-                    ldx       USRSTACK
-                    inx
-                    ldb       0,x
-                    lda       #8
+                    lda       #' '
+                    jsr       CHROUT.TWICE
+                    ldy       USRSTACK            ;Get the CCR
+                    iny
+                    ldb       ,y                  ;Get the saved CCR in B
+                    lda       #8                  ;number of bits to display
                     sta       TEMPX
-REG                 clra
-                    aslb
-                    adca      #'0'
-                    jsr       CHROUT
-                    dec       TEMPX
-                    bne       REG
-                    lda       #SP
-                    jsr       CHROUT
-                    jsr       CHROUT
-                    lda       1,x
-                    jsr       OUTBYTE             ; ACCB
-                    lda       2,x
-                    jsr       OUTBYTE             ; ACCA
-                    ldd       3,x
-                    xgdx
-                    jsr       OUTWORD             ; INX
-                    xgdx
-                    ldd       5,x
-                    xgdx
-                    jsr       OUTWORD             ; INY
-                    xgdx
-                    ldd       7,x
-                    xgdx
-                    jsr       OUTWORD             ; PC
-                    ldx       USRSTACK
-                    jsr       OUTWORD             ; SP
-                    lda       #CR
-                    jsr       CHROUT
-                    lda       #LF
-                    jsr       CHROUT
-                    rts
+
+REG                 clra                          ;Display the 8 CCR bits
+                    aslb                          ;get next bit into Carry
+                    adca      #'0'                ;produces '0' or '1'
+                    jsr       CHROUT              ;prints it
+                    dec       TEMPX               ;are we done with all 8?
+                    bne       REG                 ;if not, repeat
+
+                    lda       #' '                ;print a couple of spaces
+                    jsr       CHROUT.TWICE
+                    lda       2,y                 ;Display Register A
+                    jsr       OUTBYTE             ;ACCA
+                    lda       1,y                 ;Display Register B
+                    jsr       OUTBYTE             ;ACCB
+                    ldx       3,y                 ;Display Register X
+                    jsr       OUTWORD             ;INX
+                    ldx       5,y                 ;Display Register Y
+                    jsr       OUTWORD             ;INY
+                    ldx       7,y                 ;Display PC
+                    jsr       OUTWORD             ;PC
+                    ldx       USRSTACK            ;Display Stack Pointer
+                    jsr       OUTWORD             ;SP
+                    jsr       LINEFEED            ;..and finally, advance line
+                    jmp       CHROUT
 
 GO                  jsr       INWORD
-                    bcs       GOERR
+                    bcs       :AnRTS
                     jsr       CHRIN
                     cmpa      #CR
-                    bne       GOERR
-                    lds       #USTACK
-                    jmp       0,x                 ; CALL USER PROG,x
-
-GOERR               rts
+                    bne       :AnRTS
+                    lds       #USTACK             ;reset user stack
+                    jmp       ,x                  ;CALL USER PROG,x
 
 CONTINUE            jsr       CHRIN
                     cmpa      #CR
-                    bne       GOERR
-                    lds       USRSTACK            ; CONTINUE FROM LAST SWI
+                    bne       :AnRTS
+                    lds       USRSTACK            ;CONTINUE FROM LAST SWI
                     rti
 
-HELP                ldx       #HELPLIST
-                    jsr       PRINT
-                    rts
+;*******************************************************************************
 
-HELPLIST            fcb       CR,LF,CR,LF,CR,LF,CR,LF,CR,LF
-                    fcb       'COMMANDS:'
-                    fcb       CR,LF,CR,LF
-                    fcb       CR,LF
-                    fcb       CR,LF
-                    fcb       '?        DISPLAYS THIS SCREEN'
-                    fcb       CR,LF,CR,LF
-                    fcb       'F [xxxx] [yyyy] [zz] FILL MEMORY FROM xxxx to yyyy with zz '
-                    fcb       CR,LF,CR,LF
-                    fcb       'M [xxxx] MEMORY EXAMINE, DISPLAYS DATA AT xxxx UNTIL ANY KEY IS PRESSED'
-                    fcb       CR,LF,CR,LF
-                    fcb       'M [xxxx] [yy zz ...] MEMORY CHANGE, WRITES yy TO xxxx AND zz TO xxxx +1'
-                    fcb       CR,LF,CR,LF
-                    fcb       'G xxxx   TRANSFERS CONTROL TO PROGAM AT xxxx. PROG IS GIVEN ITS OWN'
-                    fcb       CR,LF,CR,LF
-                    fcb       '          STACK AND MUST END WITH A SWI TO RETURN TO THE MONITOR'
-                    fcb       CR,LF,CR,LF
-                    fcb       'R        DISPLAYS USER REGISTERS'
-                    fcb       CR,LF,CR,LF
-                    fcb       'C        CONTINUES A USER PROGRAM AFTER A SWI, LIKE A BREAKPOINT'
-                    fcb       CR,LF,CR,LF
-                    fcb       'S        UPLOADS A MOTO S19 HEX FILE'
-                    fcb       CR,LF,CR,LF
-                    fcb       'U        UPLOADS AN INTEL HEX FILE'
-                    fcb       CR,LF,CR,LF
-                    fcb       CR,LF
-                    fcb       0
+HELP                proc
+                    ldx       #Msg@@
+                    jmp       PRINT
 
-S19UPLOAD           lda       FLAG
+          #ifdef GREEK
+Msg@@               fcc       LF,LF,' *** Διαθέσιμες εντολές ***',LF,LF
+                    fcc       '? Ένδειξη παρούσας οθόνης',LF
+                    fcc       'F x y z Γέμισμα μνήμης από x έως y με z',LF
+                    fcc       'M x Ένδειξη μνήμης από x μέχρι πίεση πλήκτρου',LF
+                    fcc       'M x y z Αλλαγή Μνήμης, γράφει y στο x και z στο x+1',LF
+                    fcc       'G x Έναρξη προγράμματος από x. Το πρόγραμμα έχει δικό',LF
+                    fcc       '    του stack και τερματίζεται με SWI',LF
+                    fcc       'R   Ένδειξη καταχωρητών',LF
+                    fcc       'C   Επανεκκίνηση μετά από SWI',LF
+                    fcc       'S   Αποστολή αρχείου S19',LF
+                    fcs       'U   Αποστολή αρχείου intel hex',LF,LF
+          #else
+Msg@@               fcc       LF,LF,' *** Available Commands ***',LF,LF
+                    fcc       '? Show this screen',LF
+                    fcc       'F x y z Fill memory from x to y with z',LF
+                    fcc       'M x Memory display at x until a key press',LF
+                    fcc       'M x y z Memory change, writes y to x and z to x+1',LF
+                    fcc       'G x Run program at x. Prog has own stack and ends with a SWI',LF
+                    fcc       'R   Show Registers',LF
+                    fcc       'C   Continue after SWI',LF
+                    fcc       'S   Upload S19 file',LF
+                    fcs       'U   Upload intel hex file',LF,LF
+          #endif
+
+;*******************************************************************************
+
+S19UPLOAD           proc
+          #ifdef TONYP
+                    clrx
+                    bsr       S19
+                    stx       TEMPX
+                    bcs       Err@@
+                    cmpx      #0
+                    jeq       ERROR               ;if zero, no S9 address
+                    jmp       ,x
+                    bra       *
+          #else
+                    lda       FLAG
                     psha
-;                   oraa      #%10000000          ; BIT 7 SET = NO ECCO
-;                   sta       FLAG
-                    lda       #CR
-                    jsr       CHROUT
-                    lda       #LF
-                    jsr       CHROUT
-SUPSTART            clr       S19FLG
-                    clr       S0FLAG
+          #ifdef ECHO
+                    ora       #Bit7.              ;BIT 7 SET = NOECHO
+                    sta       FLAG
+          #endif
+
+          #if *-LINEFEED < 126
+                    bsr       LINEFEED
+          #else
+                    jsr       LINEFEED
+          #endif
+
+SUPSTART            clra
+                    sta       S19FLG
+                    sta       S0FLAG
                     jsr       CHRIN
-                    bcs       SERROR1
+                    bcs       Fail@@
                     cmpa      #'S'
-                    bne       SERROR1
+                    bne       Fail@@
                     jsr       CHRIN
                     cmpa      #'1'
                     beq       SUPSTRT
                     cmpa      #'0'
-                    bne       CHKS9
-                    lda       #$FF
-                    sta       S0FLAG              ; SET FLAG TO NOT STORE THIS LINE
+                    bne       S9?@@
+                    lda       #-1
+                    sta       S0FLAG              ;SET FLAG TO NOT STORE THIS LINE
                     bra       SUPSTRT
 
-CHKS9               cmpa      #'9'
-                    bne       SERROR1
-                    lda       #$FF                ; S9 RECIEVED SET FLAG TO JUMP TO ADDRESS AT END
+S9?@@               cmpa      #'9'
+                    bne       Fail@@
+
+                    lda       #-1                 ;S9 RECEIVED SET FLAG TO JUMP TO ADDRESS AT END
                     sta       S19FLG
+
 SUPSTRT             clr       CHECK
-                    jsr       INBYTE              ; GET NUM OF BYTES
-                    bcs       SERROR1
-                    psha                          ; SAVE NUMBER OF BYTES (WILL BE USED IN ACCB LATER)
+                    jsr       INBYTE              ;GET NUM OF BYTES
+                    bcs       Fail@@
+                    psha                          ;SAVE NUMBER OF BYTES (WILL BE USED IN ACCB LATER)
                     adda      CHECK
                     sta       CHECK
-                    jsr       INWORD              ; GET ADDRESS
+                    jsr       INWORD              ;GET ADDRESS
                     stx       TEMPX
                     bcc       SUPOK
                     pula
-                    bra       SERROR1
+                    bra       Fail@@
 
 SUPOK               pshx
                     xgdx
                     adda      CHECK
+                    aba
                     sta       CHECK
-                    addb      CHECK
-                    stb       CHECK
                     pulx
-                    pulb                          ; GET BACK NUMBER OF BYTES
+                    pulb                          ;GET BACK NUMBER OF BYTES
                     subb      #2
 SUPLOAD1            jsr       INBYTE
-                    bcs       SERROR1
-                    decb                          ; dec byte count
+                    bcs       Fail@@
+                    decb                          ;dec byte count
                     beq       SEND2
-                    tst       S0FLAG              ; IF S0 DONT STORE DATA
+                    tst       S0FLAG              ;IF S0 DON'T STORE DATA
                     bne       NOSTORE
-                    sta       0,x
+                    sta       ,x
 NOSTORE             adda      CHECK
                     sta       CHECK
                     inx
                     bra       SUPLOAD1
 
 SEND2               com       CHECK
-                    cmpa      CHECK               ; Compare Checksum at end of line with calculated checksum
-                    bne       SERROR1
-                    jsr       CHRIN               ; GETCR AT END OF LINE
+                    cmpa      CHECK               ;Compare Checksum at end of line with calculated checksum
+                    bne       Fail@@
+                    jsr       CHRIN               ;GETCR AT END OF LINE
                     tst       S19FLG
                     beq       SUPSTART
-SUPEND              pula
-                    sta       FLAG                ; LOCAL ECCO ON
-                    lda       #1                  ; DOWNLOAD OK
-                    oraa      FLAG
-                    sta       FLAG
-                    ldx       TEMPX               ; EXECUTE PROGRAM AT S9 ADDRESS
-                    jmp       0,x
 
-SERROR1             pula
+          ;S19 Upload End
+
+                    pula
+                    ora       #1                  ;DOWNLOAD OK
+                    sta       FLAG                ;LOCAL ECHO ON + DOWNLOAD OK
+                    ldx       TEMPX               ;EXECUTE PROGRAM AT S9 ADDRESS
+                    jeq       ERROR               ;if zero, no S9 address
+                    jmp       ,x
+
+Fail@@              pula
                     sta       FLAG
-                    jmp       ERROR
+          #endif
+Err@@               jmp       ERROR
+
+;*******************************************************************************
 
 PSEUDOVECT          rti
 
-;**********VECTORS*******************
+;*******************************************************************************
 
-                    org       $FFD6
+REGNAME             fcs       '  SXHINZVC  A[D]B  IX   IY   PC   SP',LF
+                              ;  12345678  12 12 1234 1234 1234 1234
+#ifdef TONYP
+          #ifexists lib/s19load.sub
+                    #Uses     lib/s19load.sub
+          #else
+                    #Error    No S19LOAD.SUB (assemble without -dTONYP)
+          #endif
+#endif
 
-SCI                 fdb       PSCI
-SPI                 fdb       PSPI
-PACC                fdb       PPAC
-PACCOV              fdb       PPACOV
-TOVF                fdb       PTOF
-TIOC45              fdb       PTIOC45
-TOC4                fdb       PTOC4
-TOC3                fdb       PTOC3
-TOC2                fdb       PTOC2
-TOC1                fdb       PTOC1
-TIC3                fdb       PTIC3
-TIC2                fdb       PTIC2
-TIC1                fdb       PTIC1
-RTI                 fdb       PRTI
-IRQ                 fdb       PIRQ
-XIRQ                fdb       PXIRQ
+;*******************************************************************************
 
-SWI                 fdb       MONSWI
-TRAP                fdb       MONTRAP
-COP                 fdb       COLD
-COP1                fdb       COLD
-RESET               fdb       COLD
+                    #VECTORS
+                    org       VECTORS
 
-                    end
+                    dw        PSCI
+                    dw        PSPI
+                    dw        PPAC
+                    dw        PPACOV
+                    dw        PTOF
+                    dw        PTIOC45
+                    dw        PTOC4
+                    dw        PTOC3
+                    dw        PTOC2
+                    dw        PTOC1
+                    dw        PTIC3
+                    dw        PTIC2
+                    dw        PTIC1
+                    dw        PRTI
+                    dw        PIRQ
+                    dw        PXIRQ
+                    dw        MONSWI
+                    dw        MONTRAP
+                    dw:3      COLD                ;COP, COP1, and RESET
+
+                    end       :s19crc
