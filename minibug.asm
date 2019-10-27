@@ -69,9 +69,9 @@ ACIAD               equ       REGS+$2F            ; ACIA DATA
 BAUD                equ       REGS+$2B
 SCCR1               equ       REGS+$2C
 SCCR2               equ       REGS+$2D
-SCSR                equ       $2E                 ; SCI STATUSREG.
-SCDR                equ       $2F                 ; SCI DATA
-HPRIO               equ       $3C
+SCSR                equ       REGS+$2E            ; SCI STATUSREG.
+SCDR                equ       REGS+$2F            ; SCI DATA
+HPRIO               equ       REGS+$3C
 MDA                 equ       $20
 SMOD                equ       $40
 RDRF                equ       $20                 ; SCI READY
@@ -91,7 +91,7 @@ XLOW                equ       1
                     org       0
 
 ;*******************************************************************************
-;**** INITIALISIERUNG NACH RESET
+; INITIALISIERUNG NACH RESET
 ;*******************************************************************************
 
 Start               proc
@@ -140,7 +140,7 @@ GOADR               proc
 ; WAIT FOR INPUT FROM RS232
 
 INCH                proc
-                    brclr     SCSR,Y,#RDRF,*
+                    brclr     [SCSR,Y,#RDRF,*
                     lda       ACIAD
                     bra       OUTCH
 
@@ -245,7 +245,7 @@ OUTHL               proc
 ;*******************************************************************************
 
 OUTHR               proc
-                    anda      #$F
+                    anda      #$0F
                     adda      #'0'
                     cmpa      #'9'
                     bls       OUTCH
@@ -256,7 +256,7 @@ OUTHR               proc
 ; SENDE ZEICHEN -> RS232:  (A)=SENDE-ZEICHEN
 
 OUTCH               proc
-                    brclr     SCSR,Y,#TDRE,*      ; OUTPUT READY?
+                    brclr     [SCSR,Y,#TDRE,*     ; OUTPUT READY?
                     sta       ACIAD
                     rts
 
@@ -265,7 +265,12 @@ OUTCH               proc
 
 INHEX               proc
                     jsr       INCH
-INHEX2              suba      #'0'
+;                   bra       INHEX2
+
+;*******************************************************************************
+
+INHEX2              proc
+                    suba      #'0'
                     cmpa      #9
                     bls       Done@@
                     suba      #7
