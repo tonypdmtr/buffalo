@@ -23,7 +23,7 @@
 ;  Optimized and changed a few bits without altering functionality.
 ;  (Also, modified to work with the 811E2's memory map.)
 ;
-;  Assemble using ASM11 v9.70 or later. 68Mon is setup to reside
+;  Assemble using latest ASM11 Macro Assembler. 68Mon is setup to reside
 ;  at $F800 but isn't too picky about where it's at. Programs written to
 ;  run under 68Mon must end in an SWI or the results are undefined (crash)
 ;  note that as soon as an illegal opcode is encountered control is
@@ -80,19 +80,19 @@
 VERSION             equ       120                 ;version as x.xx
 
 #ifdef ?
-  #Message +===================================================
-  #Message | Available conditionals (for use with -Dx option)
-  #Message +===================================================
-  #Message | DEBUG: for SIM11x runs (faster bps, etc.)
-  #Message | TONYP: for Tony's modifications
-  #Message | GREEK: for Greek Language menus
-  #Message | ECHO.: for enabling SCI echo
-  #Message | WSI..: for the WSI Development Kit
-  #Message | NOICE: for the NOICE Debugger
-  #Message | F1...: for F1 with 32KB ROM and 32KB RAM
-  #Message | RAMF1: for F1 with virtual ROM
-  #Message | ROM..:<value> to change ROM location
-  #Message +===================================================
+  #Hint +===================================================
+  #Hint | Available conditionals (for use with -Dx option)
+  #Hint +===================================================
+  #Hint | DEBUG: for SIM11x runs (faster bps, etc.)
+  #Hint | TONYP: for Tony's modifications
+  #Hint | GREEK: for Greek Language menus
+  #Hint | ECHO.: for enabling SCI echo
+  #Hint | WSI..: for the WSI Development Kit
+  #Hint | NOICE: for the NOICE Debugger
+  #Hint | F1...: for F1 with 32KB ROM and 32KB RAM
+  #Hint | RAMF1: for F1 with virtual ROM
+  #Hint | ROM..:<value> to change ROM location
+  #Hint +===================================================
   #Fatal Run ASM11 -Dx (where x is any of the above)
 #endif
                     #ListOff
@@ -381,7 +381,7 @@ INWORD              proc
                     tab
                     bsr       INHEX
                     bcs       Fail@@
-                    psha                          ;IS THIS IN THE CORRECT ORDER?
+                    psha
                     pshb
                     pulx
                     puld
