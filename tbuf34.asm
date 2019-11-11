@@ -139,10 +139,10 @@ ROM                 def       $D000
                     #Message  DEBUG Mode (do NOT burn device)
           #endif
 
-;***************
-;   EQUATES   *
-;***************
-; Author             equ       Tony Fourcroy
+;**********
+; EQUATES *
+;**********
+;Author             equ       Tony Fourcroy
 
 RAMBS               def       RAM                 ; start of ram
 ROMBS               def       ROM                 ; start of rom
@@ -843,7 +843,7 @@ CR@@                cmpa      #CR
 ;*******************************************************************************
 
 WCHEK               proc
-                    @cbeqa,   #',' Done@@         ; comma
+                    cbeqa,    #',' Done@@         ; comma
                     cbeqa     #' ',Done@@         ; space
                     cmpa      #TAB
 Done@@              rts
@@ -898,7 +898,7 @@ VECINIT             proc
                     ldx       #JSCI               ; Point to First RAM Vector
                     ldy       #STOPIT             ; Pointer to STOPIT routine
                     ldd       #JMP_OPCODE<8|3     ; A=JMP opcode; B=offset
-Loop@@              @cbeqa,   ,x Skip@@           ; If vector already in
+Loop@@              cbeqa,    ,x Skip@@           ; If vector already in
                     sta       ,x                  ; install JMP
                     sty       1,x                 ; to STOPIT routine
 Skip@@              abx                           ; Add 3 to point at next vector
