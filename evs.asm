@@ -5,7 +5,7 @@
 ; Original filename: 11EVS25.S19 CRC $C72D9173 (22180 bytes)
 ;
 ; Re-assemble with ASM11 to produce original S19 file (however, without the S0
-;  header; to compare you got to remove the S0 line from the original file.)
+; header; to compare you got to remove the S0 line from the original file.)
 ;
 ; Some problems were found already but not corrected until the source
 ; is "fully" reversed which requires getting the same S19 as the original.
@@ -39,9 +39,7 @@ Hint                macro     Message
                     #Hint     ~'~1~....................'.1.20~ @ {:PC(x)}
           #endif
                     endm
-
 ;-------------------------------------------------------------------------------
-
 ShowDelay           macro
           #ifdef HINT
                     #temp     ~1~*:temp+:cycles+:ocycles
@@ -50,8 +48,10 @@ ShowDelay           macro
                     endm
 
 ;*******************************************************************************
+; EQUATES
+;*******************************************************************************
 
-                    #Page     EQUATES
+VERSION             def       25                  ;version as x.x
 
 BUS_HZ              def       2000000
 BUS_KHZ             def       BUS_HZ/1000
@@ -74,28 +74,27 @@ XINIT               def       $103D
 CONFIG              def       REGS+$3F
 
 RBOOT.              def       $80
-
           #ifdef F1
 CSSTRH              def       REGS+$5C            ;Chip Select Clock Stretch
 CSCTL               def       REGS+$5D            ;Chip Select Program Control
 CSGADR              def       REGS+$5E            ;Chip Select General Address
 CSGSIZ              def       REGS+$5F            ;Chip Select General Address Size
           #endif
+STACKTOP            def       $55B0
 
 ;-------------------------------------------------------------------------------
 ; System Variables
 ;-------------------------------------------------------------------------------
 
-STACKTOP            def       $55B0
-NestLevel           def       $5405               ;Possibly counts the ISR nesting level
-SOME_IO             def       $55C0               ;Possibly some I/O
-REGBASE             def       $543D               ;Register base
-JSR_Hook            def       $541F
+nest_level          def       $5405               ;Possibly counts the ISR nesting level
+some_io             def       $55C0               ;Possibly some I/O
+reg_base            def       $543D               ;Register base
+jsr_hook            def       $541F
 
-RangeBegin          def       $017B
-RangeEnd            def       $017D
+range_begin         def       $017B
+range_end           def       $017D
 
-RegisterPointer     equ       $5400
+register_pointer    equ       $5400
 
 ;-------------------------------------------------------------------------------
 ; EEPROM programming constants
@@ -113,8 +112,9 @@ eeBulkErase         equ       $06
 DEV_ONE_CTRL        equ       $74
 DEV_ONE_DATA        equ       $77
 
-                    #VECTORS
+;*******************************************************************************
 
+                    #VECTORS
                     org       $BFD6
           #ifdef DEBUG
                     org       $FFD6
@@ -139,7 +139,6 @@ DEV_ONE_DATA        equ       $77
 
                     #SEG7
                     org       $BC10
-
           #ifdef F1
                     #SEG0
                     org       $A960
@@ -162,20 +161,21 @@ StartF1             proc
                     #Memory   $B400 $B5DD
                     #Memory   $B800 $BC07
                     #Memory   $BC10 $BD87
-
           #ifdef DEBUG
                     #Memory   $FFD6 $FFFF
           #else
                     #Memory   $BFD6 $BFFF
           #endif
 
+;*******************************************************************************
                     #RAM
+;*******************************************************************************
                     org       $E0
 BUF6
 Head                rmb       2
 Tail                rmb       2
                     rmb       2
-BUF6_LEN            equ       *-BUF6
+                    #size     BUF6
 Buffer              rmb       1                   ;size is random at this time
 
 ;*******************************************************************************
@@ -237,11 +237,11 @@ WRITE_DEV_ONE       proc
 ;*******************************************************************************
 
 VerifyRange         proc
-                    ldx       RangeBegin          ; $8450 FE 01 7B
+                    ldx       range_begin         ; $8450 FE 01 7B
 Loop@@              lda       #ERASED_STATE       ; $8453 86 FF
                     cmpa      ,x                  ; $8455 A1 00
                     bne       L8462               ; $8457 26 09
-                    cmpx      RangeEnd            ; $8459 BC 01 7D
+                    cmpx      range_end           ; $8459 BC 01 7D
                     beq       L8461               ; $845C 27 03
                     inx                           ; $845E 08
                     bra       Loop@@              ; $845F 20 F2
@@ -264,14 +264,13 @@ L846F               bsr       READ_DEV_ONE        ; $846F 8D CE
                     jmp       ,x                  ; $847D 6E 00
 
 ;*******************************************************************************
-
-                    #Cycles   6
+                              #Cycles 6
 Delay20ms           proc
                     ldy       #5714               ; $847F 18 CE 16 52
-                    #Cycles
+                              #Cycles
 Loop@@              dey                           ; $8483 18 09
                     bne       Loop@@              ; $8485 26 FC
-                    #temp     :cycles
+                              #temp :cycles
                     rts                           ; $8487 39
 
                     @ShowDelay 5714
@@ -286,14 +285,13 @@ EE_BulkErase_Hook   bra       EE_BulkErase        ; $848C 20 46
 L848E               bra       L849B               ; $848E 20 0B
 
 ;*******************************************************************************
-
-                    #Cycles   6
+                              #Cycles 6
 Delay4ms_2          proc
                     ldy       #1143               ; $8490 18 CE 04 77
-                    #Cycles
+                              #Cycles
 Loop@@              dey                           ; $8494 18 09
                     bne       Loop@@              ; $8496 26 FC
-                    #temp     :cycles
+                              #temp :cycles
                     rts                           ; $8498 39
 
                     @ShowDelay 1143
@@ -305,11 +303,11 @@ L8499               bsr       READ_DEV_ONE        ; $8499 8D A4
 ;-------------------------------------------------------------------------------
 
 L849B               proc
-                    ldx       RangeBegin          ; $849B FE 01 7B
+                    ldx       range_begin         ; $849B FE 01 7B
 Loop@@              lda       ,x                  ; $849E A6 00
                     bsr       WRITE_DEV_ONE       ; $84A0 8D A6
                     bsr       READ_DEV_ONE        ; $84A2 8D 9B
-                    cmpx      RangeEnd            ; $84A4 BC 01 7D
+                    cmpx      range_end           ; $84A4 BC 01 7D
                     beq       L846F               ; $84A7 27 C6
                     inx                           ; $84A9 08
                     bra       Loop@@              ; $84AA 20 F2
@@ -317,7 +315,7 @@ Loop@@              lda       ,x                  ; $849E A6 00
 ;-------------------------------------------------------------------------------
 
 L84AC               proc
-                    ldx       RangeBegin          ; $84AC FE 01 7B
+                    ldx       range_begin         ; $84AC FE 01 7B
 Loop@@              bsr       READ_DEV_ONE        ; $84AF 8D 8E
                     bsr       WRITE_DEV_ONE       ; $84B1 8D 95
                     sta       $0181               ; $84B3 B7 01 81
@@ -332,7 +330,7 @@ Loop@@              bsr       READ_DEV_ONE        ; $84AF 8D 8E
 
 Write@@             ldb       #$02                ; $84C8 C6 02
                     bsr       EE_Burn             ; $84CA 8D 28
-Skip@@              cmpx      RangeEnd            ; $84CC BC 01 7D
+Skip@@              cmpx      range_end           ; $84CC BC 01 7D
                     beq       L8499               ; $84CF 27 C8
                     inx                           ; $84D1 08
                     bra       Loop@@              ; $84D2 20 DB
@@ -340,7 +338,7 @@ Skip@@              cmpx      RangeEnd            ; $84CC BC 01 7D
 ;*******************************************************************************
 
 EE_BulkErase        proc
-                    ldx       RangeBegin          ; $84D4 FE 01 7B
+                    ldx       range_begin         ; $84D4 FE 01 7B
                     lda       #ERASED_STATE       ; $84D7 86 FF
                     sta       ,x                  ; $84D9 A7 00
                     ldb       #6                  ; $84DB C6 06
@@ -350,13 +348,13 @@ EE_BulkErase        proc
 ;*******************************************************************************
 
 EE_EraseRange       proc
-                    ldx       RangeBegin          ; $84E1 FE 01 7B
+                    ldx       range_begin         ; $84E1 FE 01 7B
                     lda       #ERASED_STATE       ; $84E4 86 FF
                     sta       ,x                  ; $84E6 A7 00
 Loop@@              ldb       #$16                ; $84E8 C6 16
                     bsr       EE_Burn             ; $84EA 8D 08
                     inx                           ; $84EC 08
-                    cmpx      RangeEnd            ; $84ED BC 01 7D
+                    cmpx      range_end           ; $84ED BC 01 7D
                     bls       Loop@@              ; $84F0 23 F6
                     bra       VerifyRange_Hook    ; $84F2 20 96
 
@@ -397,7 +395,6 @@ Loop@@              ldb       DEV_ONE_CTRL        ; $8516 D6 74
                     jsr       PrintMessage        ; $8529 BD 88 F9
                     jsr       L8587               ; $852C BD 85 87
                     jmp       COMMON_ISR_RESET    ; $852F 7E 8E E3
-
 Read@@              lda       DEV_ONE_DATA        ; $8532 96 77
                     rts                           ; $8534 39
 
@@ -410,26 +407,26 @@ L8535               proc
                     lda       #$D0                ; $8539 86 D0
                     sta       $71                 ; $853B 97 71
 
-                    lda       SOME_IO             ; $853D B6 55 C0
+                    lda       some_io             ; $853D B6 55 C0
                     ora       #%01000000          ; $8540 8A 40
                     anda      #%11111101          ; $8542 84 FD
-                    sta       SOME_IO             ; $8544 B7 55 C0
+                    sta       some_io             ; $8544 B7 55 C0
 
                     jsr       Delay20ms           ; $8547 BD 84 7F
                     ora       #$01                ; $854A 8A 01
-                    sta       SOME_IO             ; $854C B7 55 C0
+                    sta       some_io             ; $854C B7 55 C0
 
                     ldb       #$0C                ; $854F C6 0C
                     stb       $73                 ; $8551 D7 73
 
                     ora       #$80                ; $8553 8A 80
-                    sta       SOME_IO             ; $8555 B7 55 C0
+                    sta       some_io             ; $8555 B7 55 C0
 
                     ora       #$04                ; $8558 8A 04
-                    sta       SOME_IO             ; $855A B7 55 C0
+                    sta       some_io             ; $855A B7 55 C0
 
                     ora       #$02                ; $855D 8A 02
-                    sta       SOME_IO             ; $855F B7 55 C0
+                    sta       some_io             ; $855F B7 55 C0
 
                     lda       #$FF                ; $8562 86 FF
                     jsr       WRITE_DEV_ONE_Hook  ; $8564 BD 84 06
@@ -455,20 +452,20 @@ Delay@@             dex                           ; $857B 09
 ;*******************************************************************************
 
 L8587               proc
-                    lda       SOME_IO             ; $8587 B6 55 C0
+                    lda       some_io             ; $8587 B6 55 C0
                     anda      #$FD                ; $858A 84 FD
-                    sta       SOME_IO             ; $858C B7 55 C0
+                    sta       some_io             ; $858C B7 55 C0
                     jsr       Delay20ms           ; $858F BD 84 7F
                     anda      #$FB                ; $8592 84 FB
-                    sta       SOME_IO             ; $8594 B7 55 C0
+                    sta       some_io             ; $8594 B7 55 C0
                     anda      #$7F                ; $8597 84 7F
-                    sta       SOME_IO             ; $8599 B7 55 C0
+                    sta       some_io             ; $8599 B7 55 C0
                     clr       $0073               ; $859C 7F 00 73
                     anda      #$BF                ; $859F 84 BF
                     ora       #$02                ; $85A1 8A 02
-                    sta       SOME_IO             ; $85A3 B7 55 C0
+                    sta       some_io             ; $85A3 B7 55 C0
                     anda      #$FE                ; $85A6 84 FE
-                    sta       SOME_IO             ; $85A8 B7 55 C0
+                    sta       some_io             ; $85A8 B7 55 C0
                     rts                           ; $85AB 39
 
 ;*******************************************************************************
@@ -508,7 +505,7 @@ L862B               proc
 L8637               bsr       L8659               ; $8637 8D 20
                     cmpa      #$FE                ; $8639 81 FE
                     beq       L8646               ; $863B 27 09
-                    ldx       #errNOTBLANK        ; $863D CE B4 2C
+                    ldx       #MsgErrNOTBLANK     ; $863D CE B4 2C
 L8640               jsr       NewLine             ; $8640 BD 89 86
                     jsr       PrintMessage        ; $8643 BD 88 F9
 L8646               ldy       #WRITE_DEV_ONE_Hook ; $8646 18 CE 84 06 ???
@@ -541,7 +538,7 @@ L8664               proc
                     cmpa      #$FE                ; $8671 81 FE
                     beq       L8695               ; $8673 27 20
 
-                    ldx       #errNOTBLANK        ; $8675 CE B4 2C
+                    ldx       #MsgErrNOTBLANK     ; $8675 CE B4 2C
                     jsr       NewLine             ; $8678 BD 89 86
                     jsr       PrintMessage        ; $867B BD 88 F9
                     ldx       #MsgContinue        ; $867E CE B4 6A
@@ -615,7 +612,7 @@ L8724               ldx       #MsgReadComplete    ; $8724 CE B4 86
                     ldx       #MsgVerifyOK        ; $872C CE B4 58
 L872F               jmp       L8640               ; $872F 7E 86 40
 
-L8732               ldx       #errNOVERIFY        ; $8732 CE B4 3F
+L8732               ldx       #MsgErrNOVERIFY     ; $8732 CE B4 3F
                     jmp       L8640               ; $8735 7E 86 40
 
 ;*******************************************************************************
@@ -646,9 +643,8 @@ L8757               proc
 Loop@@              ldd       $540A               ; $8768 FC 54 0A
                     subd      $5408               ; $876B B3 54 08
                     bcc       AnRTS@@             ; $876E 24 06
-L8770               inc       NestLevel           ; $8770 7C 54 05
+L8770               inc       nest_level          ; $8770 7C 54 05
                     jmp       COMMON_ISR_RESET    ; $8773 7E 8E E3
-
 AnRTS@@             rts                           ; $8776 39
 
 Skip@@              dec       $5417               ; $8777 7A 54 17
@@ -780,22 +776,22 @@ L886F               clr       $5428               ; $886F 7F 54 28
 L8878               proc
                     ldx       $5414               ; $8878 FE 54 14
                     ldb       #1                  ; $887B C6 01
-                    clr       RegisterPointer     ; $887D 7F 54 00
+                    clr       register_pointer    ; $887D 7F 54 00
 
                     cmpa      #'P'                ; $8880 81 50
                     bne       Y@@                 ; $8882 26 05
                     ldb       #8                  ; $8884 C6 08
-                    inc       RegisterPointer     ; $8886 7C 54 00
+                    inc       register_pointer    ; $8886 7C 54 00
 
 Y@@                 cmpa      #'Y'                ; $8889 81 59
                     bne       X@@                 ; $888B 26 05
                     ldb       #6                  ; $888D C6 06
-                    inc       RegisterPointer     ; $888F 7C 54 00
+                    inc       register_pointer    ; $888F 7C 54 00
 
 X@@                 cmpa      #'X'                ; $8892 81 58
                     bne       A@@                 ; $8894 26 05
                     ldb       #4                  ; $8896 C6 04
-                    inc       RegisterPointer     ; $8898 7C 54 00
+                    inc       register_pointer    ; $8898 7C 54 00
 
 A@@                 cmpa      #'A'                ; $889B 81 41
                     bne       B@@                 ; $889D 26 02
@@ -853,7 +849,7 @@ L88DB               proc
                     lda       #$3D                ; $88DB 86 3D
                     jsr       L87E8               ; $88DD BD 87 E8
                     jsr       L89B4               ; $88E0 BD 89 B4
-                    tst       RegisterPointer     ; $88E3 7D 54 00
+                    tst       register_pointer    ; $88E3 7D 54 00
                     beq       Done@@              ; $88E6 27 0D
                     jsr       L88AC               ; $88E8 BD 88 AC
                     ldx       $5408               ; $88EB FE 54 08
@@ -881,7 +877,7 @@ PRINT_MSG_HOOK      proc
 
 L8906               proc
                     jsr       NewLine             ; $8906 BD 89 86
-                    clr       RegisterPointer     ; $8909 7F 54 00
+                    clr       register_pointer    ; $8909 7F 54 00
                     ldx       #D897F              ; $890C CE 89 7F
                     stx       $5406               ; $890F FF 54 06
 Loop@@              lda       ,x                  ; $8912 A6 00
@@ -984,7 +980,7 @@ L89BE               proc
                     orb       #$02                ; $89CA CA 02
 
                     ldx       #$E700              ; $89CC CE E7 00
-                    stx       JSR_Hook            ; $89CF FF 54 1F
+                    stx       jsr_hook            ; $89CF FF 54 1F
 
                     ldx       $5408               ; $89D2 FE 54 08
                     stx       $5422               ; $89D5 FF 54 22
@@ -993,7 +989,7 @@ L89BE               proc
                     lda       $5402               ; $89DD B6 54 02
 
                     ldx       #$55FF              ; $89E0 CE 55 FF
-                    jsr       JSR_Hook            ; $89E3 BD 54 1F
+                    jsr       jsr_hook            ; $89E3 BD 54 1F
 
                     ldb       $55FF               ; $89E6 F6 55 FF
                     andb      #$FD                ; $89E9 C4 FD
@@ -1152,10 +1148,10 @@ L8A85               proc
 
 L8A8E               proc
                     ldx       #$54A2              ; $8A8E CE 54 A2
-                    ldb       RegisterPointer     ; $8A91 F6 54 00
+                    ldb       register_pointer    ; $8A91 F6 54 00
                     abx                           ; $8A94 3A
                     ldd       ,x                  ; $8A95 EC 00
-                    inc:2     RegisterPointer     ; $8A97 7C 54 00 7C 54 00
+                    inc:2     register_pointer    ; $8A97 7C 54 00 7C 54 00
                     std       $5408               ; $8A9D FD 54 08
                     rts                           ; $8AA0 39
 
@@ -1190,21 +1186,21 @@ L8AA3               proc
 L8AC4               clrb                          ; $8AC4 5F
                     lda       #$08                ; $8AC5 86 08
 L8AC7               sta       $5401               ; $8AC7 B7 54 01
-                    stb       RegisterPointer     ; $8ACA F7 54 00
+                    stb       register_pointer    ; $8ACA F7 54 00
 L8ACD               bsr       L8A8E               ; $8ACD 8D BF
                     beq       L8AEB               ; $8ACF 27 1A
                     ldb       $55FF               ; $8AD1 F6 55 FF
                     orb       #$08                ; $8AD4 CA 08
                     stb       $55FF               ; $8AD6 F7 55 FF
                     jsr       L89B4               ; $8AD9 BD 89 B4
-                    ldb       RegisterPointer     ; $8ADC F6 54 00
+                    ldb       register_pointer    ; $8ADC F6 54 00
                     lsrb                          ; $8ADF 54
                     ldx       #$54B0              ; $8AE0 CE 54 B0
                     abx                           ; $8AE3 3A
                     sta       ,x                  ; $8AE4 A7 00
                     lda       #$3F                ; $8AE6 86 3F
                     jsr       L8991               ; $8AE8 BD 89 91
-L8AEB               ldb       RegisterPointer     ; $8AEB F6 54 00
+L8AEB               ldb       register_pointer    ; $8AEB F6 54 00
                     cmpb      $5401               ; $8AEE F1 54 01
                     bls       L8ACD               ; $8AF1 23 DA
                     jmp       L9AFF               ; $8AF3 7E 9A FF
@@ -1218,19 +1214,19 @@ L8AF6               proc
 ;*******************************************************************************
 
 L8AF9               proc
-                    stb       RegisterPointer     ; $8AF9 F7 54 00
+                    stb       register_pointer    ; $8AF9 F7 54 00
                     sta       $5401               ; $8AFC B7 54 01
 Loop@@              bsr       L8A8E               ; $8AFF 8D 8D
                     beq       Skip@@              ; $8B01 27 0D
-                    ldb       RegisterPointer     ; $8B03 F6 54 00
+                    ldb       register_pointer    ; $8B03 F6 54 00
                     lsrb                          ; $8B06 54
                     ldx       #$54B0              ; $8B07 CE 54 B0
                     abx                           ; $8B0A 3A
                     lda       ,x                  ; $8B0B A6 00
                     jsr       L8991               ; $8B0D BD 89 91
-Skip@@              lda       RegisterPointer     ; $8B10 B6 54 00
+Skip@@              lda       register_pointer    ; $8B10 B6 54 00
                     suba      #4                  ; $8B13 80 04
-                    sta       RegisterPointer     ; $8B15 B7 54 00
+                    sta       register_pointer    ; $8B15 B7 54 00
                     cmpa      $5401               ; $8B18 B1 54 01
                     bpl       Loop@@              ; $8B1B 2A E2
                     rts                           ; $8B1D 39
@@ -1266,7 +1262,7 @@ D8B32               fdb       $1213               ; $8B32 12 13
 L8B50               ldx       #$8B1E              ; $8B50 CE 8B 1E
 L8B53               cmpa      ,x                  ; $8B53 A1 00
                     bne       L8B5C               ; $8B55 26 05
-                    inc       NestLevel           ; $8B57 7C 54 05
+                    inc       nest_level          ; $8B57 7C 54 05
                     bra       L8B62               ; $8B5A 20 06
 
 L8B5C               inx                           ; $8B5C 08
@@ -1283,7 +1279,7 @@ L8B63               clr       $5416               ; $8B63 7F 54 16
                     bsr       L8B50               ; $8B75 8D D9
                     beq       L8BCF               ; $8B77 27 56
 
-L8B79               inc       NestLevel           ; $8B79 7C 54 05
+L8B79               inc       nest_level          ; $8B79 7C 54 05
                     rts                           ; $8B7C 39
 
 L8B7D               lda       #$02                ; $8B7D 86 02
@@ -1388,7 +1384,7 @@ L8C38               cmpb      #$18                ; $8C38 C1 18
                     ldx       #$8B3A              ; $8C49 CE 8B 3A
                     jsr       L8B53               ; $8C4C BD 8B 53
                     beq       $8C5C               ; $8C4F 27 0B
-                    clr       NestLevel           ; $8C51 7F 54 05
+                    clr       nest_level          ; $8C51 7F 54 05
                     ldb       #$81                ; $8C54 C6 81
                     stb       $542C               ; $8C56 F7 54 2C
                     jmp       $8DB2               ; $8C59 7E 8D B2
@@ -1415,7 +1411,7 @@ L8C38               cmpb      #$18                ; $8C38 C1 18
                     ldx       #$8B36              ; $8C87 CE 8B 36
                     jsr       L8B53               ; $8C8A BD 8B 53
                     beq       L8C9F               ; $8C8D 27 10
-                    clr       NestLevel           ; $8C8F 7F 54 05
+                    clr       nest_level          ; $8C8F 7F 54 05
                     bra       L8CA2               ; $8C92 20 0E
 
                     jsr       L8A58               ; $8C94 BD 8A 58
@@ -1468,7 +1464,6 @@ L8CE9               lda       #$20                ; $8CE9 86 20
 L8CF3               sta       $5416               ; $8CF3 B7 54 16
                     inc       $54BC               ; $8CF6 7C 54 BC
                     jmp       L8DFD               ; $8CF9 7E 8D FD
-
 L8CFC               lda       $5401               ; $8CFC B6 54 01
                     cmpa      #$8F                ; $8CFF 81 8F
                     beq       L8D5D               ; $8D01 27 5A
@@ -1482,10 +1477,9 @@ L8CFC               lda       $5401               ; $8CFC B6 54 01
                     cmpa      #$F0                ; $8D11 81 F0
                     beq       L8D89               ; $8D13 27 74
                     cmpa      #$20                ; $8D15 81 20
-                    bne       $8D1C               ; $8D17 26 03
+                    bne       L8D1C               ; $8D17 26 03
                     jmp       L8B7D               ; $8D19 7E 8B 7D
-
-                    cmpa      #$50                ; $8D1C 81 50
+L8D1C               cmpa      #$50                ; $8D1C 81 50
                     bls       L8D5D               ; $8D1E 23 3D
                     lda       $5401               ; $8D20 B6 54 01
                     ldx       #L8B50              ; $8D23 CE 8B 50
@@ -1493,9 +1487,8 @@ L8CFC               lda       $5401               ; $8CFC B6 54 01
                     ldx       #$8B4A              ; $8D29 CE 8B 4A
                     jsr       L8B53               ; $8D2C BD 8B 53
                     beq       L8D36               ; $8D2F 27 05
-                    clr       NestLevel           ; $8D31 7F 54 05
+                    clr       nest_level          ; $8D31 7F 54 05
                     bra       L8D90               ; $8D34 20 5A
-
 L8D36               cmpa      #$8D                ; $8D36 81 8D
                     beq       L8D5A               ; $8D38 27 20
                     cmpa      #$9D                ; $8D3A 81 9D
@@ -1514,9 +1507,7 @@ L8D36               cmpa      #$8D                ; $8D36 81 8D
                     cmpa      #$D0                ; $8D54 81 D0
                     beq       L8DAA               ; $8D56 27 52
                     bra       L8D9E               ; $8D58 20 44
-
 L8D5A               jmp       L8B7D               ; $8D5A 7E 8B 7D
-
 L8D5D               bra       L8DCF               ; $8D5D 20 70
 
 L8D5F               lda       #$04                ; $8D5F 86 04
@@ -1707,22 +1698,26 @@ L8ED7               inc       $5417               ; $8ED7 7C 54 17
 L8EDB               jsr       L8E3A               ; $8EDB BD 8E 3A
                     bra       L8F0D               ; $8EDE 20 2D
 
-L8EE0               inc       NestLevel           ; $8EE0 7C 54 05
+L8EE0               inc       nest_level          ; $8EE0 7C 54 05
+;                   bra       COMMON_ISR_RESET
 
-COMMON_ISR_RESET    lds       #STACKTOP           ; $8EE3 8E 55 B0
+;*******************************************************************************
+
+COMMON_ISR_RESET    proc
+                    lds       #STACKTOP           ; $8EE3 8E 55 B0
                     ldy       #$0100              ; $8EE6 18 CE 01 00
 L8EEA               jsr       KickCOP             ; $8EEA BD A7 DB
                     dey                           ; $8EED 18 09
                     bne       L8EEA               ; $8EEF 26 F9
                     jsr       LA801               ; $8EF1 BD A8 01
                     jsr       NewLine             ; $8EF4 BD 89 86
-                    tst       NestLevel           ; $8EF7 7D 54 05
+                    tst       nest_level          ; $8EF7 7D 54 05
                     beq       L8F0A               ; $8EFA 27 0E
                     lda       #7                  ; $8EFC 86 07
                     jsr       L87E8               ; $8EFE BD 87 E8
                     ldx       #MsgIllEntryError   ; $8F01 CE B4 C4
                     jsr       PrintMessage        ; $8F04 BD 88 F9
-                    clr       NestLevel           ; $8F07 7F 54 05
+                    clr       nest_level          ; $8F07 7F 54 05
 L8F0A               jsr       L8E3D               ; $8F0A BD 8E 3D
 L8F0D               clr       $5417               ; $8F0D 7F 54 17
                     clr       $5404               ; $8F10 7F 54 04
@@ -1817,18 +1812,18 @@ L8FA2               jsr       L8E8D               ; $8FA2 BD 8E 8D
                     beq       L8FA2               ; $8FBB 27 E5
                     rts                           ; $8FBD 39
 
-L8FBE               inc       NestLevel           ; $8FBE 7C 54 05
+L8FBE               inc       nest_level          ; $8FBE 7C 54 05
                     jmp       COMMON_ISR_RESET    ; $8FC1 7E 8E E3
 
 L8FC4               dec       $5417               ; $8FC4 7A 54 17
                     bmi       L900F               ; $8FC7 2B 46
-                    clr       RegisterPointer     ; $8FC9 7F 54 00
+                    clr       register_pointer    ; $8FC9 7F 54 00
                     clr       $541A               ; $8FCC 7F 54 1A
                     ldd       $5408               ; $8FCF FC 54 08
                     std       $54B9               ; $8FD2 FD 54 B9
 L8FD5               jsr       L8A8E               ; $8FD5 BD 8A 8E
                     beq       L8FE3               ; $8FD8 27 09
-                    ldb       RegisterPointer     ; $8FDA F6 54 00
+                    ldb       register_pointer    ; $8FDA F6 54 00
                     cmpb      #$0A                ; $8FDD C1 0A
                     bne       L8FD5               ; $8FDF 26 F4
                     bra       L900F               ; $8FE1 20 2C
@@ -1857,18 +1852,18 @@ L900F               jsr       NewLine             ; $900F BD 89 86
                     jsr       L87E8               ; $901A BD 87 E8
                     lda       #$3D                ; $901D 86 3D
                     jsr       L87E8               ; $901F BD 87 E8
-                    clr       RegisterPointer     ; $9022 7F 54 00
+                    clr       register_pointer    ; $9022 7F 54 00
 L9025               jsr       L8A8E               ; $9025 BD 8A 8E
                     beq       L9033               ; $9028 27 09
                     jsr       L88CE               ; $902A BD 88 CE
                     ldx       #MsgSpaces4         ; $902D CE B4 E2
                     jsr       PrintMessage        ; $9030 BD 88 F9
-L9033               ldb       RegisterPointer     ; $9033 F6 54 00
+L9033               ldb       register_pointer    ; $9033 F6 54 00
                     cmpb      #$08                ; $9036 C1 08
                     bls       L9025               ; $9038 23 EB
 L903A               jmp       COMMON_ISR_RESET    ; $903A 7E 8E E3
 
-L903D               inc       NestLevel           ; $903D 7C 54 05
+L903D               inc       nest_level          ; $903D 7C 54 05
                     bra       L903A               ; $9040 20 F8
 
 L9042               dec       $5417               ; $9042 7A 54 17
@@ -1912,7 +1907,7 @@ L9096               ldb       $55FF               ; $9096 F6 55 FF
                     stb       $55FF               ; $909B F7 55 FF
                     jsr       L8A2A               ; $909E BD 8A 2A
                     jsr       L8B63               ; $90A1 BD 8B 63
-                    tst       NestLevel           ; $90A4 7D 54 05
+                    tst       nest_level          ; $90A4 7D 54 05
                     bne       L90B0               ; $90A7 26 07
                     ldb       #$0A                ; $90A9 C6 0A
                     lda       #$0C                ; $90AB 86 0C
@@ -1938,7 +1933,7 @@ L940B               std       $541D               ; $940B FD 54 1D
                     jsr       L8A49               ; $9416 BD 8A 49
                     jsr       L8AA1               ; $9419 BD 8A A1
                     beq       L9429               ; $941C 27 0B
-L941E               inc       NestLevel           ; $941E 7C 54 05
+L941E               inc       nest_level          ; $941E 7C 54 05
                     clrd                          ; $9421 4F 5F
                     std       $541D               ; $9423 FD 54 1D
                     jmp       COMMON_ISR_RESET    ; $9426 7E 8E E3
@@ -1960,7 +1955,7 @@ L943C               std       $541B               ; $943C FD 54 1B
 L9444               ldd       #1                  ; $9444 CC 00 01
                     bra       L943C               ; $9447 20 F3
 
-L9449               inc       NestLevel           ; $9449 7C 54 05
+L9449               inc       nest_level          ; $9449 7C 54 05
 L944C               jmp       COMMON_ISR_RESET    ; $944C 7E 8E E3
 
 L944F               clr       $54B9               ; $944F 7F 54 B9
@@ -2096,7 +2091,7 @@ L9561               lda       ,x                  ; $9561 A6 00
                     bra       L959E               ; $9588 20 14
 
 L958A               jsr       L8991               ; $958A BD 89 91
-                    tst       RegisterPointer     ; $958D 7D 54 00
+                    tst       register_pointer    ; $958D 7D 54 00
                     beq       L959E               ; $9590 27 0C
                     jsr       L8A63               ; $9592 BD 8A 63
                     lda       $5412               ; $9595 B6 54 12
@@ -2111,7 +2106,7 @@ L959E               lda       $5401               ; $959E B6 54 01
                     beq       L95F5               ; $95AB 27 48
                     cmpa      #$2E                ; $95AD 81 2E
                     beq       L95B4               ; $95AF 27 03
-L95B1               inc       NestLevel           ; $95B1 7C 54 05
+L95B1               inc       nest_level          ; $95B1 7C 54 05
 L95B4               lda       $5401               ; $95B4 B6 54 01
                     rts                           ; $95B7 39
 
@@ -2150,7 +2145,7 @@ L95F5               jsr       L8A58               ; $95F5 BD 8A 58
                     clr       $5419               ; $9603 7F 54 19
                     bra       L95B4               ; $9606 20 AC
 
-                    tst       RegisterPointer     ; $9608 7D 54 00
+                    tst       register_pointer    ; $9608 7D 54 00
                     beq       L95B4               ; $960B 27 A7
                     jsr       L8A63               ; $960D BD 8A 63
                     bra       L95B4               ; $9610 20 A2
@@ -2159,12 +2154,12 @@ D9612               fcs       '^=.',CR            ; $9612 5E 3D 2E 0D $00
 
 L9617               dec       $5417               ; $9617 7A 54 17
                     bne       L967E               ; $961A 26 62
-                    clr       RegisterPointer     ; $961C 7F 54 00
+                    clr       register_pointer    ; $961C 7F 54 00
 
 L961F               jsr       NewLine             ; $961F BD 89 86
                     jsr       L88CE               ; $9622 BD 88 CE
                     jsr       L9542               ; $9625 BD 95 42
-                    tst       NestLevel           ; $9628 7D 54 05
+                    tst       nest_level          ; $9628 7D 54 05
                     bne       L9681               ; $962B 26 54
                     cmpa      #$2E                ; $962D 81 2E
                     bne       L961F               ; $962F 26 EE
@@ -2183,7 +2178,7 @@ L963D               jsr       NewLine             ; $963D BD 89 86
                     jsr       L8878               ; $964B BD 88 78
                     jsr       L87E8               ; $964E BD 87 E8
                     jsr       L9542               ; $9651 BD 95 42
-L9654               tst       NestLevel           ; $9654 7D 54 05
+L9654               tst       nest_level          ; $9654 7D 54 05
                     bne       L9681               ; $9657 26 28
                     cmpa      #$2E                ; $9659 81 2E
                     beq       L9681               ; $965B 27 24
@@ -2203,7 +2198,7 @@ L966E               lda       $540D               ; $966E B6 54 0D
                     jsr       L8A58               ; $9679 BD 8A 58
                     bra       L966E               ; $967C 20 F0
 
-L967E               inc       NestLevel           ; $967E 7C 54 05
+L967E               inc       nest_level          ; $967E 7C 54 05
 L9681               jmp       COMMON_ISR_RESET    ; $9681 7E 8E E3
 
 L9684               dec       $5417               ; $9684 7A 54 17
@@ -2215,11 +2210,11 @@ L9684               dec       $5417               ; $9684 7A 54 17
                     lda       $543B               ; $968F B6 54 3B
                     beq       L969D               ; $9692 27 09
                     clr       $543B               ; $9694 7F 54 3B
-                    lda       REGBASE             ; $9697 B6 54 3D
+                    lda       reg_base            ; $9697 B6 54 3D
                     sta       $543E               ; $969A B7 54 3E
-L969D               lda       REGBASE             ; $969D B6 54 3D
+L969D               lda       reg_base            ; $969D B6 54 3D
                     jsr       SetXBase            ; $96A0 BD A7 D2
-                    stb       REGBASE             ; $96A3 F7 54 3D
+                    stb       reg_base            ; $96A3 F7 54 3D
                     stb       [INIT,x             ; $96A6 E7 3D
                     pulx                          ; $96A8 38
                     pulb                          ; $96A9 33
@@ -2263,15 +2258,15 @@ L970B               ldy       #$7C00              ; $970B 18 CE 7C 00
                     brclr     $00,Y,#$40,L970B    ; $970F 18 1F 00 40 F7
 L9714               rts                           ; $9714 39
 
-L9715               lda       SOME_IO             ; $9715 B6 55 C0
+L9715               lda       some_io             ; $9715 B6 55 C0
                     anda      #$E7                ; $9718 84 E7
                     ora       #$20                ; $971A 8A 20
-                    sta       SOME_IO             ; $971C B7 55 C0
+                    sta       some_io             ; $971C B7 55 C0
                     rts                           ; $971F 39
 
-L9720               lda       SOME_IO             ; $9720 B6 55 C0
+L9720               lda       some_io             ; $9720 B6 55 C0
                     anda      #$DF                ; $9723 84 DF
-                    sta       SOME_IO             ; $9725 B7 55 C0
+                    sta       some_io             ; $9725 B7 55 C0
                     rts                           ; $9728 39
 
 L9729               lda       #0                  ; $9729 86 00
@@ -2280,7 +2275,7 @@ L9729               lda       #0                  ; $9729 86 00
                     sta       $7C04               ; $9730 B7 7C 04
                     bra       L96D0               ; $9733 20 9B
 
-L9735               inc       NestLevel           ; $9735 7C 54 05
+L9735               inc       nest_level          ; $9735 7C 54 05
                     jmp       COMMON_ISR_RESET    ; $9738 7E 8E E3
 
 L973B               lda       $5401               ; $973B B6 54 01
@@ -2359,7 +2354,7 @@ L97D3               ldb       $542B               ; $97D3 F6 54 2B
                     coma                          ; $97E0 43
                     cmpa      $5419               ; $97E1 B1 54 19
                     beq       L9793               ; $97E4 27 AD
-L97E6               inc       NestLevel           ; $97E6 7C 54 05
+L97E6               inc       nest_level          ; $97E6 7C 54 05
 L97E9               jsr       L9720               ; $97E9 BD 97 20
                     clr       $5443               ; $97EC 7F 54 43
                     clr       $5428               ; $97EF 7F 54 28
@@ -2410,7 +2405,7 @@ L9821               ldx       #$5444              ; $9821 CE 54 44
                     dec       $5402               ; $985A 7A 54 02
                     bpl       $9851               ; $985D 2A F2
                     jsr       L9A53               ; $985F BD 9A 53
-                    tst       NestLevel           ; $9862 7D 54 05
+                    tst       nest_level          ; $9862 7D 54 05
                     beq       $9879               ; $9865 27 12
                     jsr       L8A63               ; $9867 BD 8A 63
                     tst       $542C               ; $986A 7D 54 2C
@@ -2441,7 +2436,7 @@ L9821               ldx       #$5444              ; $9821 CE 54 44
                     cmpa      #$35                ; $98A3 81 35
                     bne       L98AE               ; $98A5 26 07
                     ldb       #$8E                ; $98A7 C6 8E
-                    inc       NestLevel           ; $98A9 7C 54 05
+                    inc       nest_level          ; $98A9 7C 54 05
                     bra       L9917               ; $98AC 20 69
 
 L98AE               ldb       #$FF                ; $98AE C6 FF
@@ -2462,7 +2457,7 @@ L98B0               bra       L9917               ; $98B0 20 65
                     ldx       #$9AB2              ; $98C7 CE 9A B2
                     cmpb      #$03                ; $98CA C1 03
                     bne       L98DC               ; $98CC 26 0E
-                    inc       NestLevel           ; $98CE 7C 54 05
+                    inc       nest_level          ; $98CE 7C 54 05
                     lda       $5407               ; $98D1 B6 54 07
                     cmpa      #$1A                ; $98D4 81 1A
                     blo       L9914               ; $98D6 25 3C
@@ -2522,7 +2517,7 @@ L992B               anda      #$0F                ; $992B 84 0F
                     beq       L9942               ; $993D 27 03
                     tsta                          ; $993F 4D
                     bmi       L995B               ; $9940 2B 19
-L9942               tst       NestLevel           ; $9942 7D 54 05
+L9942               tst       nest_level          ; $9942 7D 54 05
                     bne       L995B               ; $9945 26 14
                     ldx       #$A4F3              ; $9947 CE A4 F3
                     tba                           ; $994A 17
@@ -2555,7 +2550,7 @@ L9972               lda       $5402               ; $9972 B6 54 02
                     abx                           ; $9984 3A
                     lda       ,x                  ; $9985 A6 00
                     anda      #$7F                ; $9987 84 7F
-                    stb       RegisterPointer     ; $9989 F7 54 00
+                    stb       register_pointer    ; $9989 F7 54 00
                     ldb       $5419               ; $998C F6 54 19
                     addb      #$16                ; $998F CB 16
                     ldx       #$5444              ; $9991 CE 54 44
@@ -2563,7 +2558,7 @@ L9972               lda       $5402               ; $9972 B6 54 02
                     sta       ,x                  ; $9995 A7 00
                     dec       $5419               ; $9997 7A 54 19
                     bmi       L99A9               ; $999A 2B 0D
-                    ldb       RegisterPointer     ; $999C F6 54 00
+                    ldb       register_pointer    ; $999C F6 54 00
 L999F               decb                          ; $999F 5A
                     ldx       #DA400              ; $99A0 CE A4 00
                     abx                           ; $99A3 3A
@@ -2648,7 +2643,7 @@ L9A3C               ldx       #$5444              ; $9A3C CE 54 44
                     bls       L9A3C               ; $9A48 23 F2
                     ldx       #$54AC              ; $9A4A CE 54 AC
                     jsr       L8A85               ; $9A4D BD 8A 85
-                    clr       NestLevel           ; $9A50 7F 54 05
+                    clr       nest_level          ; $9A50 7F 54 05
 L9A53               ldx       #$5429              ; $9A53 CE 54 29
                     jsr       $8A52               ; $9A56 BD 8A 52
                     rts                           ; $9A59 39
@@ -2686,13 +2681,13 @@ L9A8C               lda       #'$'                ; $9A8C 86 24
 L9A91               bsr       L9A8C               ; $9A91 8D F9
 L9A93               lda       $54AC               ; $9A93 B6 54 AC
                     bsr       L9A60               ; $9A96 8D C8
-                    lda       $54AD               ; $9A98 B6 54 AD
+                    lda       $54AC+1             ; $9A98 B6 54 AD
                     bsr       L9A60               ; $9A9B 8D C3
                     rts                           ; $9A9D 39
 
-;-------------------------------------------------------------------------------
-; The following is possibly DATA
-;-------------------------------------------------------------------------------
+;*******************************************************************************
+; This section is nonsense code so probably data or 'noise'
+;*******************************************************************************
 
                     bne       $9AB3               ; $9A9E 26 13
                     blo       $9AC6               ; $9AA0 25 24
@@ -2709,8 +2704,6 @@ L9A93               lda       $54AC               ; $9A93 B6 54 AC
                     fcb       $45                 ; $9AAE 45
                     eora      #$4B                ; $9AAF 88 4B
                     bgt       $9B32               ; $9AB1 2E 7F
-; END OF DATA
-
                     ins                           ; $9AB3 31
                     com       $8108               ; $9AB4 73 81 08
                     daa                           ; $9AB7 19
@@ -2766,7 +2759,7 @@ L9B0D               dec       $5417               ; $9B0D 7A 54 17
                     clr       $542F               ; $9B12 7F 54 2F
 L9B15               jsr       L981C               ; $9B15 BD 98 1C
                     clr       $5416               ; $9B18 7F 54 16
-                    clr       NestLevel           ; $9B1B 7F 54 05
+                    clr       nest_level          ; $9B1B 7F 54 05
                     clr       $542C               ; $9B1E 7F 54 2C
                     jsr       L8E3D               ; $9B21 BD 8E 3D
                     jsr       L8E79               ; $9B24 BD 8E 79
@@ -2799,7 +2792,7 @@ L9B5C               cmpa      $5419               ; $9B5C B1 54 19
                     bhi       L9B4C               ; $9B61 22 E9
 L9B63               lda       #$07                ; $9B63 86 07
                     jsr       L87E8               ; $9B65 BD 87 E8
-                    clr       NestLevel           ; $9B68 7F 54 05
+                    clr       nest_level          ; $9B68 7F 54 05
                     bra       L9B15               ; $9B6B 20 A8
 
 L9B6D               jmp       COMMON_ISR_RESET    ; $9B6D 7E 8E E3
@@ -2821,7 +2814,7 @@ L9B8B               ldx       #DA400              ; $9B8B CE A4 00
                     abx                           ; $9B8E 3A
                     lda       ,x                  ; $9B8F A6 00
                     lsra:4                        ; $9B91 44 44 44 44
-                    sta       RegisterPointer     ; $9B95 B7 54 00
+                    sta       register_pointer    ; $9B95 B7 54 00
                     cmpa      #$04                ; $9B98 81 04
                     bne       L9BC7               ; $9B9A 26 2B
                     jsr       L8E79               ; $9B9C BD 8E 79
@@ -2858,7 +2851,7 @@ L9BC7               ldb       $5404               ; $9BC7 F6 54 04
                     beq       L9BDF               ; $9BD9 27 04
                     cmpa      #$0D                ; $9BDB 81 0D
                     bne       L9BF0               ; $9BDD 26 11
-L9BDF               lda       RegisterPointer     ; $9BDF B6 54 00
+L9BDF               lda       register_pointer    ; $9BDF B6 54 00
                     deca                          ; $9BE2 4A
                     beq       L9BEB               ; $9BE3 27 06
                     cmpa      #$08                ; $9BE5 81 08
@@ -2872,24 +2865,26 @@ L9BF0               cmpa      #$20                ; $9BF0 81 20
                     beq       L9BF7               ; $9BF2 27 03
 L9BF4               jmp       L9B63               ; $9BF4 7E 9B 63
 
-L9BF7               ldb       RegisterPointer     ; $9BF7 F6 54 00
+L9BF7               ldb       register_pointer    ; $9BF7 F6 54 00
                     aslb                          ; $9BFA 58
                     ldx       #$9C01              ; $9BFB CE 9C 01
                     abx                           ; $9BFE 3A
                     ldx       ,x                  ; $9BFF EE 00
                     jmp       ,x                  ; $9C01 6E 00
 
+;*******************************************************************************
 ; The following is table of subroutine entries
+;*******************************************************************************
 
-D9C03               fdb       L9DA1               ; $9C03 9D A1
-                    fdb       L9CDB               ; $9C05 9C DB
-                    fdb       L9C9E               ; $9C07 9C 9E
-                    fdb       L9CDB               ; $9C09 9C DB
-                    fdb       L9DC2_Hook          ; $9C0B 9D 9C
-                    fdb       L9CE5               ; $9C0D 9C E5
-                    fdb       L9CE5               ; $9C0F 9C E5
-                    fdb       L9C18               ; $9C11 9C 18
-                    fdb       L9E03               ; $9C13 9E 03
+D9C03               dw        L9DA1               ; $9C03 9D A1
+                    dw        L9CDB               ; $9C05 9C DB
+                    dw        L9C9E               ; $9C07 9C 9E
+                    dw        L9CDB               ; $9C09 9C DB
+                    dw        L9DC2_Hook          ; $9C0B 9D 9C
+                    dw        L9CE5               ; $9C0D 9C E5
+                    dw        L9CE5               ; $9C0F 9C E5
+                    dw        L9C18               ; $9C11 9C 18
+                    dw        L9E03               ; $9C13 9E 03
 
 L9C15               jmp       L9B63               ; $9C15 7E 9B 63
 
@@ -2923,7 +2918,7 @@ L9C3F               lda       $5404               ; $9C3F B6 54 04
                     jsr       L8E8D               ; $9C5B BD 8E 8D
                     clra                          ; $9C5E 4F
                     jsr       $9CB2               ; $9C5F BD 9C B2
-                    tst       NestLevel           ; $9C62 7D 54 05
+                    tst       nest_level          ; $9C62 7D 54 05
                     bne       L9C92               ; $9C65 26 2B
                     jsr       L8A63               ; $9C67 BD 8A 63
                     bsr       L9C74               ; $9C6A 8D 08
@@ -2953,7 +2948,7 @@ L9C9B               jmp       L9C15               ; $9C9B 7E 9C 15
 L9C9E               inc       $5416               ; $9C9E 7C 54 16
                     jsr       L8E8D               ; $9CA1 BD 8E 8D
                     jsr       L9CAF               ; $9CA4 BD 9C AF
-                    tst       NestLevel           ; $9CA7 7D 54 05
+                    tst       nest_level          ; $9CA7 7D 54 05
                     bne       L9C9B               ; $9CAA 26 EF
                     jmp       L9DA4               ; $9CAC 7E 9D A4
 
@@ -2965,16 +2960,16 @@ L9CAF               lda       $5416               ; $9CAF B6 54 16
                     bcc       $9CCB               ; $9CBC 24 0D
                     cmpa      #$FF                ; $9CBE 81 FF
                     beq       $9CC5               ; $9CC0 27 03
-                    inc       NestLevel           ; $9CC2 7C 54 05
+                    inc       nest_level          ; $9CC2 7C 54 05
                     tstb                          ; $9CC5 5D
                     bmi       $9CD7               ; $9CC6 2B 0F
-                    inc       NestLevel           ; $9CC8 7C 54 05
+                    inc       nest_level          ; $9CC8 7C 54 05
                     tsta                          ; $9CCB 4D
                     beq       $9CD1               ; $9CCC 27 03
-                    inc       NestLevel           ; $9CCE 7C 54 05
+                    inc       nest_level          ; $9CCE 7C 54 05
                     tstb                          ; $9CD1 5D
                     bpl       $9CD7               ; $9CD2 2A 03
-                    inc       NestLevel           ; $9CD4 7C 54 05
+                    inc       nest_level          ; $9CD4 7C 54 05
                     stb       $5413               ; $9CD7 F7 54 13
                     rts                           ; $9CDA 39
 
@@ -2993,7 +2988,7 @@ L9CEF               inc       $5416               ; $9CEF 7C 54 16
                     tst       $54BD               ; $9CF7 7D 54 BD
                     ble       L9D0A               ; $9CFA 2F 0E
                     inc       $5416               ; $9CFC 7C 54 16
-                    ldb       RegisterPointer     ; $9CFF F6 54 00
+                    ldb       register_pointer    ; $9CFF F6 54 00
                     cmpb      #$04                ; $9D02 C1 04
                     bne       L9D08               ; $9D04 26 02
                     suba      #$10                ; $9D06 80 10
@@ -3007,7 +3002,7 @@ L9D0A               adda      $5404               ; $9D0A BB 54 04
 
 L9D1A               jsr       L9D37               ; $9D1A BD 9D 37
                     bne       L9DC2_Hook          ; $9D1D 26 7D
-                    ldb       RegisterPointer     ; $9D1F F6 54 00
+                    ldb       register_pointer    ; $9D1F F6 54 00
                     cmpb      #$04                ; $9D22 C1 04
                     beq       L9DA1               ; $9D24 27 7B
                     lda       $5404               ; $9D26 B6 54 04
@@ -3050,29 +3045,32 @@ L9D66               proc
                     ldb       $549A               ; $9D66 F6 54 9A
                     cmpb      #$59                ; $9D69 C1 59
                     beq       AnRTS               ; $9D6B 27 0A
+;                   bra       L9D6D
 
 ;*******************************************************************************
 
 L9D6D               proc
                     cmpb      #$5B                ; $9D6D C1 5B
-                    beq       AnRTS               ; $9D6F 27 06
+                    beq       Done@@              ; $9D6F 27 06
                     cmpb      #$89                ; $9D71 C1 89
-                    beq       AnRTS               ; $9D73 27 02
+                    beq       Done@@              ; $9D73 27 02
                     cmpb      #$CD                ; $9D75 C1 CD
-AnRTS               rts                           ; $9D77 39
+Done@@              rts                           ; $9D77 39
 
+;*******************************************************************************
+AnRTS               equ       :AnRTS
 ;*******************************************************************************
 
 L9D78               proc
                     ldb       $549A               ; $9D78 F6 54 9A
                     cmpb      #$5A                ; $9D7B C1 5A
-                    beq       Exit@@              ; $9D7D 27 0A
+                    beq       Done@@              ; $9D7D 27 0A
                     cmpb      #$88                ; $9D7F C1 88
-                    beq       Exit@@              ; $9D81 27 06
+                    beq       Done@@              ; $9D81 27 06
                     cmpb      #$CC                ; $9D83 C1 CC
-                    beq       Exit@@              ; $9D85 27 02
+                    beq       Done@@              ; $9D85 27 02
 L9D87               cmpb      #$59                ; $9D87 C1 59
-Exit@@              rts                           ; $9D89 39
+Done@@              rts                           ; $9D89 39
 
 ;*******************************************************************************
 
@@ -3118,7 +3116,7 @@ L9DC5               tst       $5430               ; $9DC5 7D 54 30
                     jsr       L8A58               ; $9DD2 BD 8A 58
 L9DD5               lda       $5404               ; $9DD5 B6 54 04
 L9DD8               jsr       L8991               ; $9DD8 BD 89 91
-                    tst       NestLevel           ; $9DDB 7D 54 05
+                    tst       nest_level          ; $9DDB 7D 54 05
                     bne       L9E00               ; $9DDE 26 20
                     jsr       L8A58               ; $9DE0 BD 8A 58
                     ldx       #$5412              ; $9DE3 CE 54 12
@@ -3134,7 +3132,6 @@ L9DF2               jsr       L9A53               ; $9DF2 BD 9A 53
                     tst       $542F               ; $9DF8 7D 54 2F
                     bne       L9E00               ; $9DFB 26 03
                     jmp       L9B2B               ; $9DFD 7E 9B 2B
-
 L9E00               jmp       COMMON_ISR_RESET    ; $9E00 7E 8E E3
 
 L9E03               lda       #$18                ; $9E03 86 18
@@ -3144,7 +3141,7 @@ L9E03               lda       #$18                ; $9E03 86 18
 L9E0D               bra       L9DA1               ; $9E0D 20 92
 
 L9E0F               jsr       L8E8D               ; $9E0F BD 8E 8D
-                    ldb       RegisterPointer     ; $9E12 F6 54 00
+                    ldb       register_pointer    ; $9E12 F6 54 00
                     eorb      #$07                ; $9E15 C8 07
                     beq       L9E1E               ; $9E17 27 05
                     tst       $5412               ; $9E19 7D 54 12
@@ -3157,7 +3154,8 @@ L9E1E               dec       $5418               ; $9E1E 7A 54 18
 L9E2A               bra       L9E0D               ; $9E2A 20 E1
 
 ;*******************************************************************************
-; Possibly DATA follows
+; This section is nonsense code so probably data or 'noise'
+;*******************************************************************************
 
 D9E2C               fcb       $41                 ; $9E2C 41
                     fcb       $42                 ; $9E2D 42
@@ -3305,12 +3303,12 @@ D9E2C               fcb       $41                 ; $9E2C 41
                     eorb      $D9                 ; $9F1C D8 D9
                     fcb       $00                 ; $9F1E 00
                     nop                           ; $9F1F 01
-; END OF DATA
 
 ;*******************************************************************************
                     #SEG4
 ;*******************************************************************************
-; DATA
+; This section is nonsense code so probably data or 'noise'
+;*******************************************************************************
 
 DA400               fcb       $00                 ; $A400 00
                     fcb       $01                 ; $A401 01
@@ -3350,60 +3348,60 @@ DA400               fcb       $00                 ; $A400 00
                     fcb       $13,$12,$12,$92     ; $A478 13 12 12 92
                     fcb       $00,$01,$42,$01     ; $A47C 00 01 42 01
                     bhi       $A482               ; $A480 22 00
-                    nop                           ; $A482 01
-                    idiv                          ; $A483 02
+                    fcb       $01                 ; $A482 01
+                    fcb       $02                 ; $A483 02
                     com       $63,x               ; $A484 63 63
                     fcb       $72                 ; $A486 72
                     fcb       $72                 ; $A487 72
                     fcb       $72                 ; $A488 72
                     fcb       $72                 ; $A489 72
-                    nop                           ; $A48A 01
+                    fcb       $01                 ; $A48A 01
                     fcb       $42                 ; $A48B 42
-                    brclr     $13,#$13,$A4D2      ; $A48C 13 13 13 42
-                    brclr     $13,#$13,$A494      ; $A490 13 13 13 00
-                    nop                           ; $A494 01
+                    fcb       $13,$13,$13,$42     ; $A48C 13 13 13 42
+                    fcb       $13,$13,$13,$00     ; $A490 13 13 13 00
+                    fcb       $01                 ; $A494 01
                     brset     $00,#$01,$A4DB      ; $A495 12 00 01 42
                     brclr     $13,#$01,$A4AF      ; $A499 13 13 01 12
                     fcb       $00                 ; $A49D 00
-                    nop                           ; $A49E 01
-                    idiv                          ; $A49F 02
+                    fcb       $01                 ; $A49E 01
+                    fcb       $02                 ; $A49F 02
                     com       $63,x               ; $A4A0 63 63
                     fcb       $00                 ; $A4A2 00
-                    nop                           ; $A4A3 01
-                    idiv                          ; $A4A4 02
+                    fcb       $01                 ; $A4A3 01
+                    fcb       $02                 ; $A4A4 02
                     brclr     $13,#$13,$A43C      ; $A4A5 13 13 13 93
-                    nop                           ; $A4A9 01
-                    idiv                          ; $A4AA 02
+                    fcb       $01                 ; $A4A9 01
+                    fcb       $02                 ; $A4AA 02
                     brclr     $13,#$13,$A442      ; $A4AB 13 13 13 93
                     fcb       $00                 ; $A4AF 00
-                    nop                           ; $A4B0 01
+                    fcb       $01                 ; $A4B0 01
                     fcb       $42                 ; $A4B1 42
                     brclr     $13,#$42,$A4C9      ; $A4B2 13 13 42 13
                     brclr     $01,#$12,$A4CC      ; $A4B6 13 01 12 12
                     fcb       $00                 ; $A4BA 00
-                    nop                           ; $A4BB 01
+                    fcb       $01                 ; $A4BB 01
                     brset     $02,#$63,$A523      ; $A4BC 12 02 63 63
-                    nop                           ; $A4C0 01
+                    fcb       $01                 ; $A4C0 01
                     brset     $12,#$12,$A4C6      ; $A4C1 12 12 12 01
-                    idiv                          ; $A4C5 02
+                    fcb       $02                 ; $A4C5 02
                     bls       $A4EB               ; $A4C6 23 23
                     bhi       $A4CC               ; $A4C8 22 02
                     brclr     $22,#$22,$A4F0      ; $A4CA 13 22 22 22
-                    nop                           ; $A4CE 01
-                    idiv                          ; $A4CF 02
+                    fcb       $01                 ; $A4CE 01
+                    fcb       $02                 ; $A4CF 02
                     com       $63,x               ; $A4D0 63 63
                     com       $0112               ; $A4D2 73 01 12
                     fcb       $00                 ; $A4D5 00
-                    nop                           ; $A4D6 01
+                    fcb       $01                 ; $A4D6 01
                     brset     $12,#$01,$A4ED      ; $A4D7 12 12 01 12
-                    nop                           ; $A4DB 01
-                    idiv                          ; $A4DC 02
+                    fcb       $01                 ; $A4DB 01
+                    fcb       $02                 ; $A4DC 02
                     brclr     $01,#$12,$A4E2      ; $A4DD 13 01 12 01
                     fcb       $42                 ; $A4E1 42
                     brclr     $13,#$12,$A478      ; $A4E2 13 13 12 92
-                    nop                           ; $A4E6 01
+                    fcb       $01                 ; $A4E6 01
                     brset     $01,#$92,$A4EB      ; $A4E7 12 01 92 00
-                    nop                           ; $A4EB 01
+                    fcb       $01                 ; $A4EB 01
                     brset     $00,#$01,$A4F2      ; $A4EC 12 00 01 02
                     brclr     $93,#$00,$A50F      ; $A4F0 13 93 00 1B
                     abx                           ; $A4F4 3A
@@ -3426,7 +3424,9 @@ DA400               fcb       $00                 ; $A400 00
                     bne       $A53F               ; $A513 26 2A
                     bra       LA538               ; $A515 20 21
 
-          ;This area is probably data or some table
+;*******************************************************************************
+; This section is nonsense code so probably data or 'noise'
+;*******************************************************************************
 
                     brclr     $12,#$14,$A4A8      ; $A517 13 12 14 8D
                     bvc       $A546               ; $A51B 28 29
@@ -3450,6 +3450,8 @@ DA400               fcb       $00                 ; $A400 00
                     fcb       $41                 ; $A535 41
                     fdiv                          ; $A536 03
                     idiv                          ; $A537 02
+
+;*******************************************************************************
 
 LA538               inc       $4C,x               ; $A538 6C 4C
                     incb                          ; $A53A 5C
@@ -3482,7 +3484,9 @@ LA538               inc       $4C,x               ; $A538 6C 4C
                     rti                           ; $A563 3B
                     rts                           ; $A564 39
 
-          ;This area is probably data or some table
+;*******************************************************************************
+; This section is nonsense code so probably data or 'noise'
+;*******************************************************************************
 
                     sba                           ; $A565 10
                     sbca      #$C2                ; $A566 82 C2
@@ -3522,34 +3526,36 @@ Loop@@              ldd       ,x                  ; $A58D EC 00
                     beq       OK@@                ; $A595 27 04
                     inx:2                         ; $A597 08 08
                     bra       Loop@@              ; $A599 20 F2
-
 OK@@                xgdx                          ; $A59B 8F
                     subd      #BAUDS              ; $A59C 83 A5 B3
                     lsrb                          ; $A59F 54
-                    addb      #$03                ; $A5A0 CB 03
+                    addb      #3                  ; $A5A0 CB 03
                     stb       $5432               ; $A5A2 F7 54 32
                     orb       #$40                ; $A5A5 CA 40
                     stb       $7C05               ; $A5A7 F7 7C 05
                     jmp       COMMON_ISR_RESET    ; $A5AA 7E 8E E3
-
-Done@@              inc       NestLevel           ; $A5AD 7C 54 05
+Done@@              inc       nest_level          ; $A5AD 7C 54 05
                     jmp       COMMON_ISR_RESET    ; $A5B0 7E 8E E3
 
 ;-------------------------------------------------------------------------------
-; The following lines are data for the various baud rates
+; The following lines are data for the various baud rates stored as hex
 ;-------------------------------------------------------------------------------
 
-BAUDS               dw        $0150               ; $A5B3 01 50
-                    dw        $0300               ; $A5B5 03 00
-                    dw        $0600               ; $A5B7 06 00
-                    dw        $1200               ; $A5B9 12 00
-                    dw        $2000               ; $A5BB 20 00
-                    dw        $2400               ; $A5BD 24 00
-                    dw        $4800               ; $A5BF 48 00
-                    dw        $1800               ; $A5C1 18 00
-                    dw        $9600               ; $A5C3 96 00
-                    dw        $0192               ; $A5C5 01 92
-                    fcb       $00                 ; $A5C7 00          Marks end of table
+BAUDS               dw        $0150               ; $A5B3 01 50   150 bps
+                    dw        $0300               ; $A5B5 03 00   300 bps
+                    dw        $0600               ; $A5B7 06 00   600 bps
+                    dw        $1200               ; $A5B9 12 00  1200 bps
+                    dw        $2000               ; $A5BB 20 00  2000 bps
+                    dw        $2400               ; $A5BD 24 00  2400 bps
+                    dw        $4800               ; $A5BF 48 00  4800 bps
+                    dw        $1800               ; $A5C1 18 00     ? bps
+                    dw        $9600               ; $A5C3 96 00  9600 bps
+                    dw        $0192               ; $A5C5 01 92 19200 bps
+          ;--------------------------------------
+          ; Bug? Next line should be DW, not FCB as
+          ; LDD is used and checked against zero to terminate
+          ;--------------------------------------
+                    fcb       $00                 ; $A5C7 00 End-of-table marker
 
 ;*******************************************************************************
 
@@ -3593,9 +3599,9 @@ Start               proc
                     ldx       #REGS               ; $A604 CE 10 00
                     bclr      [CONFIG,x,#$02      ; $A607 1D 3F 02  Disable On-Chip ROM
 
-                    clr       SOME_IO             ; $A60A 7F 55 C0
+                    clr       some_io             ; $A60A 7F 55 C0
                     lda       #$02                ; $A60D 86 02
-                    sta       SOME_IO             ; $A60F B7 55 C0
+                    sta       some_io             ; $A60F B7 55 C0
 
                     ldx       #246                ; $A612 CE 00 F6
                     stx       $5414               ; $A615 FF 54 14
@@ -3604,7 +3610,7 @@ Start               proc
                     sta       1,x                 ; $A61A A7 01
 
                     clr       $543B               ; $A61C 7F 54 3B
-                    clr       REGBASE             ; $A61F 7F 54 3D
+                    clr       reg_base            ; $A61F 7F 54 3D
                     clr       $543E               ; $A622 7F 54 3E
                     clr       $543F               ; $A625 7F 54 3F
                     clr       $5440               ; $A628 7F 54 40
@@ -3618,10 +3624,10 @@ Start               proc
                     cmpa      #5                  ; $A63A 81 05
                     bne       LA658               ; $A63C 26 1A
 
-                    inc       REGBASE             ; $A63E 7C 54 3D
+                    inc       reg_base            ; $A63E 7C 54 3D
                     inc       $543E               ; $A641 7C 54 3E
                     inc       $543F               ; $A644 7C 54 3F
-                    lda       REGBASE             ; $A647 B6 54 3D
+                    lda       reg_base            ; $A647 B6 54 3D
                     jsr       SetXBase            ; $A64A BD A7 D2
 
                     brclr     [CONFIG,x,#$02,LA66B ; $A64D 1F 3F 02 1A
@@ -3629,7 +3635,7 @@ Start               proc
                     sta       $5441               ; $A653 B7 54 41
                     bra       LA674               ; $A656 20 1C
 
-LA658               lda       REGBASE             ; $A658 B6 54 3D
+LA658               lda       reg_base            ; $A658 B6 54 3D
                     jsr       SetXBase            ; $A65B BD A7 D2
                     brclr     [HPRIO,x,#$01,LA674 ; $A65E 1F 3C 01 12
                     inc       $5440               ; $A662 7C 54 40
@@ -3645,7 +3651,7 @@ LA674               ldb       #$04                ; $A674 C6 04
                     stb       $55FF               ; $A676 F7 55 FF
 
                     clr       $5428               ; $A679 7F 54 28
-                    clr       RegisterPointer     ; $A67C 7F 54 00
+                    clr       register_pointer    ; $A67C 7F 54 00
 
                     jsr       L8A82               ; $A67F BD 8A 82
                     ldx       #$7C00              ; $A682 CE 7C 00
@@ -3655,7 +3661,7 @@ LA674               ldb       #$04                ; $A674 C6 04
                     lda       $7C00               ; $A68C B6 7C 00
                     lda       $7C03               ; $A68F B6 7C 03
                     jsr       KickCOP             ; $A692 BD A7 DB
-                    brclr     $00,x,#$01,$A692    ; $A695 1F 00 01 F9
+                    brclr     ,x,#$01,$A692       ; $A695 1F 00 01 F9
                     ldb       3,x                 ; $A699 E6 03
                     jsr       LA771               ; $A69B BD A7 71
                     lda       #$4D                ; $A69E 86 4D
@@ -3667,13 +3673,13 @@ LA674               ldb       #$04                ; $A674 C6 04
                     bcs       LA6BE               ; $A6A8 25 14
                     lsrb:4                        ; $A6AA 54 54 54 54
                     bcs       LA6BC               ; $A6AE 25 0C
-
-                    ldy       #0                  ; $A6B0 18 CE 00 00
-LA6B4               dey                           ; $A6B4 18 09
+          ;-------------------------------------- This endless loop simply counts down Y
+                    clry                          ; $A6B0 18 CE 00 00
+Halt                dey                           ; $A6B4 18 09
                     iny                           ; $A6B6 18 08
                     dey                           ; $A6B8 18 09
-                    bra       LA6B4               ; $A6BA 20 F8
-
+                    bra       Halt                ; $A6BA 20 F8
+          ;--------------------------------------
 LA6BC               suba      #2                  ; $A6BC 80 02
 LA6BE               suba      #2                  ; $A6BE 80 02
 LA6C0               suba      #1                  ; $A6C0 80 01
@@ -3711,10 +3717,10 @@ LA6F5               proc
                     psha                          ; $A6F6 36
                     pshb                          ; $A6F7 37
 
-                    lda       REGBASE             ; $A6F8 B6 54 3D
+                    lda       reg_base            ; $A6F8 B6 54 3D
                     jsr       SetXBase            ; $A6FB BD A7 D2
                     lda       [INIT,x             ; $A6FE A6 3D
-                    cmpa      REGBASE             ; $A700 B1 54 3D
+                    cmpa      reg_base            ; $A700 B1 54 3D
                     beq       Go@@                ; $A703 27 06
                     lda       $543E               ; $A705 B6 54 3E
                     jsr       SetXBase            ; $A708 BD A7 D2
@@ -3773,10 +3779,10 @@ LA771               proc
                     pshx                          ; $A771 3C
                     psha                          ; $A772 36
                     pshb                          ; $A773 37
-                    lda       REGBASE             ; $A774 B6 54 3D
+                    lda       reg_base            ; $A774 B6 54 3D
                     jsr       SetXBase            ; $A777 BD A7 D2
                     lda       [INIT,x             ; $A77A A6 3D
-                    cmpa      REGBASE             ; $A77C B1 54 3D
+                    cmpa      reg_base            ; $A77C B1 54 3D
                     beq       LA787               ; $A77F 27 06
                     lda       $543E               ; $A781 B6 54 3E
                     jsr       SetXBase            ; $A784 BD A7 D2
@@ -3813,6 +3819,7 @@ LA7B7               lda       $5441               ; $A7B7 B6 54 41
 
                     ldd       $543A               ; $A7CD FC 54 3A
                     std       $56,x               ; $A7D0 ED 56
+;                   bra       SetXBase
 
 ;*******************************************************************************
 
@@ -3839,7 +3846,7 @@ KickCOP             proc
                     sta       [COPRST,x           ; $A7EC A7 3A
                     stb       [COPRST,x           ; $A7EE E7 3A
 
-Skip@@              lda       REGBASE             ; $A7F0 B6 54 3D
+Skip@@              lda       reg_base            ; $A7F0 B6 54 3D
                     jsr       SetXBase            ; $A7F3 BD A7 D2
                     ldd       #$55AA              ; $A7F6 CC 55 AA
                     sta       [COPRST,x           ; $A7F9 A7 3A
@@ -3883,7 +3890,7 @@ LA846               proc
                     ldb       $5428               ; $A846 F6 54 28
                     andb      #$FD                ; $A849 C4 FD
                     stb       $5428               ; $A84B F7 54 28
-                    clr       NestLevel           ; $A84E 7F 54 05
+                    clr       nest_level          ; $A84E 7F 54 05
                     clr       $5427               ; $A851 7F 54 27
                     ldb       #$04                ; $A854 C6 04
                     stb       $55FF               ; $A856 F7 55 FF
@@ -3892,7 +3899,6 @@ LA846               proc
                     std       $54B7               ; $A85E FD 54 B7
                     std       $541B               ; $A861 FD 54 1B
                     jmp       L953C               ; $A864 7E 95 3C
-
 LA867               jmp       LA91B               ; $A867 7E A9 1B
 
 ;*******************************************************************************
@@ -3913,10 +3919,10 @@ SWI_Handler         proc
                     jsr       L89B4               ; $A88B BD 89 B4
                     cmpa      #$3F                ; $A88E 81 3F
                     beq       LA867               ; $A890 27 D5
-                    lda       REGBASE             ; $A892 B6 54 3D
+                    lda       reg_base            ; $A892 B6 54 3D
                     jsr       SetXBase            ; $A895 BD A7 D2
                     lda       [INIT,x             ; $A898 A6 3D
-                    cmpa      REGBASE             ; $A89A B1 54 3D
+                    cmpa      reg_base            ; $A89A B1 54 3D
                     bne       LA8A2               ; $A89D 26 03
                     inc       $543B               ; $A89F 7C 54 3B
 LA8A2               ldb       $55FF               ; $A8A2 F6 55 FF
@@ -3990,7 +3996,6 @@ LA939               tst       $5427               ; $A939 7D 54 27
                     std       $541B               ; $A94A FD 54 1B
                     bne       LA951               ; $A94D 26 02
                     bra       LA90D               ; $A94F 20 BC
-
 LA951               jsr       L8906               ; $A951 BD 89 06
                     jmp       L9096               ; $A954 7E 90 96
 
@@ -4005,22 +4010,23 @@ COMMON_ISR          proc
                     #SEG5                         ;SECTION 5 (MESSAGE BLOCK)
 ;*******************************************************************************
 
-MsgVersion          fcs       CR,LF,'  EVSbug11 Rev 2.5'
+MsgVersion          fcs       CR,LF,'  EVSbug11 Rev {VERSION(1)}'
 MsgBRKPT            fcs       '  Brkpt'
 MsgAbort            fcs       '  Abort'
 MsgRegs             fcs       '  Regs'
-errNOTBLANK         fcs       'MC68HC11 NOT BLANK'
-errNOVERIFY         fcs       'MC68HC11 DOES NOT VERIFY'
+MsgErrNOTBLANK      fcs       'MC68HC11 NOT BLANK'
+MsgErrNOVERIFY      fcs       'MC68HC11 DOES NOT VERIFY'
 MsgVerifyOK         fcs       'VERIFY COMPLETE'
 MsgCR               fcs       CR
 MsgContinue         fcs       CR,LF,'ENTER RETURN TO CONTINUE'
-
-;WARNING: The following line should be missing (possibly related to the FCC bug below)
-
+          ;--------------------------------------
+          ; WARNING:
+          ; The following line should be missing
+          ; (possibly related to the FCC bug below)
+          ;--------------------------------------
                     fcb       0
 
 MsgReadComplete     fcs       'READ COMPLETE'
-
 MsgReadError        fcs       'ERROR IN READ'
 MsgIntInMonError    fcs       'INTERRUPT OCCURRED IN MONITOR MAP'
 MsgIllEntryError    fcs       ' ILLEGAL/INSUFFICIENT ENTRY',CR,LF
@@ -4031,12 +4037,11 @@ MsgSpaces2          fcc       ' '
 MsgSpaces1          fcs       ' '
 
 MsgBadMemoryError   fcs       ' BAD MEMORY'
-
 MsgBreak            fcs       'BREAK = Abort command, CTRL-A = Exit transparent mode, CTRL-H = Backspace, '
 
-msgCTRLS            fcs       'CTRL-S = Freeze screen, CTRL-X = Cancel command line'
-msgASM              fcs       'ASM <START ADDR>- Single line assembler/disassembler'
-msgBF               fcs       'BF <START ADDR> <END ADDR> <DATA>- Block fill memory'
+MsgCTRLS            fcs       'CTRL-S = Freeze screen, CTRL-X = Cancel command line'
+MsgASM              fcs       'ASM <START ADDR>- Single line assembler/disassembler'
+MsgBF               fcs       'BF <START ADDR> <END ADDR> <DATA>- Block fill memory'
 
 SEG5END             equ       *-1
 
@@ -4048,47 +4053,48 @@ SEG5END             equ       *-1
                     #SEG6                         ;SECTION 6 (MESSAGE BLOCK)
 ;*******************************************************************************
 
-                    @hint     MsgBR
+                    @Hint     MsgBR
 MsgBR               fcs       'BR [<ADDR1 - ADDR5>]- Set 1 to 5 breakpoints'
-                    @hint     MsgBULK
+                    @Hint     MsgBULK
 MsgBULK             fcs       'BULK <ADDR> - Bulk erase slave MCU EEPROM or CONFIG'
-                    @hint     MsgCHCK
+                    @Hint     MsgCHCK
 MsgCHCK             fcs       'CHCK <START ADDR> [<END ADDR>]- Blank check slave MCU EEPROM. Blank byte = FF'
-
-          ;WARNING: The following line has a bug in the original source code, it
-          ;         should have been FCS, not FCC
-          ;         This is partly responsible for the weird help display.
-
+          ;--------------------------------------
+          ; WARNING:
+          ; The following line has a bug in the original
+          ; source code, it should have been FCS, not FCC
+          ; This is partly responsible for the weird help display.
+          ;--------------------------------------
 MsgCopy             fcc       'COPY <START ADDR> [<END ADDR> <USR MAP START>]-COPY slave MCU EEPROM to User Map'
-                    @hint     MsgERASE
+                    @Hint     MsgERASE
 MsgERASE            fcs       'ERASE <START ADDR> [<END ADDR>]- Byte erase slave MCU EEPROM'
-                    @hint     MsgG
+                    @Hint     MsgG
 MsgG                fcs       'G [<START ADDR>]- Go to user map and execute program'
-                    @hint     MsgLOAD
+                    @Hint     MsgLOAD
 MsgLOAD             fcs       'LOAD <PORT> [=<TEXT>]- Download (H)ost or (T)erminal port to user map'
-                    @hint     MsgINIT
+                    @Hint     MsgINIT
 MsgINIT             fcs       'INIT <DATA> - Enter users init register value'
-                    @hint     MsgMD
+                    @Hint     MsgMD
 MsgMD               fcs       'MD <START ADDR> [<END ADDR>]- Memory display'
-                    @hint     MsgMM
+                    @Hint     MsgMM
 MsgMM               fcs       'MM <ADDRESS>- Memory modify'
-                    @hint     MsgNOBR
+                    @Hint     MsgNOBR
 MsgNOBR             fcs       'NOBR [<ADDR1 - ADDR5>]- Remove breakpoints'
-                    @hint     MsgP
+                    @Hint     MsgP
 MsgP                fcs       'P [<COUNT>]- Proceed 1-FFFF times through a breakpoint'
-                    @hint     MsgPROG
+                    @Hint     MsgPROG
 MsgPROG             fcs       'PROG <START ADDR> [<END ADDR> <DATA>]-Program slave MCU EEPROM'
-                    @hint     MsgRD
+                    @Hint     MsgRD
 MsgRD               fcs       'RD- Register display'
-                    @hint     MsgRM
+                    @Hint     MsgRM
 MsgRM               fcs       'RM- Register modify'
-                    @hint     MsgSPEED
+                    @Hint     MsgSPEED
 MsgSPEED            fcs       'SPEED <BAUD RATE>- Select host baud rate'
-                    @hint     MsgT
+                    @Hint     MsgT
 MsgT                fcs       'T [<COUNT>]- Trace 1-FFFF instructions'
-                    @hint     MsgTM
+                    @Hint     MsgTM
 MsgTM               fcs       'TM [<EXIT CHARACTER>]- Transparent mode'
-                    @hint     MsgVERF
+                    @Hint     MsgVERF
 MsgVerf             fcs       'VERF <START ADDR> [<END ADDR> <USR MAP>]- Verify slave MCU EEPROM to user map'
 
 ;*******************************************************************************
@@ -4111,7 +4117,9 @@ Str7                macro     String
                     fcc       ~2~~3~
                     endm
 
+;-------------------------------------------------------------------------------
 ; Table of command names with last byte's BIT7 set
+;-------------------------------------------------------------------------------
 
                     @Str7     ASM                 ; $BBBE 41 53 CD
                     @Str7     BF                  ; $BBC1 42 C6
@@ -4153,7 +4161,7 @@ Loop@@              bsr       GetChar             ; $BC1B 8D 18
                     bsr       PutChar             ; $BC1D 8D 21
                     sta       ,x                  ; $BC1F A7 00
                     inx                           ; $BC21 08
-                    cmpx      #BUF6+BUF6_LEN-1    ; $BC22 8C 00 E5
+                    cmpx      #BUF6+::BUF6-1      ; $BC22 8C 00 E5
                     bne       Loop@@              ; $BC25 26 F4
 
                     tab                           ; $BC27 16
@@ -4169,17 +4177,17 @@ Loop@@              bsr       GetChar             ; $BC1B 8D 18
 ;*******************************************************************************
 
 GetChar             proc
-                    ldb       SCSR                ; $BC35 F6 10 2E
+Loop@@              ldb       SCSR                ; $BC35 F6 10 2E
                     andb      #$20                ; $BC38 C4 20
-                    beq       GetChar             ; $BC3A 27 F9
+                    beq       Loop@@              ; $BC3A 27 F9
                     lda       SCDR                ; $BC3C B6 10 2F
                     rts                           ; $BC3F 39
 
 ;*******************************************************************************
 
 PutChar             proc
-                    tst       SCSR                ; $BC40 7D 10 2E
-                    bpl       PutChar             ; $BC43 2A FB
+Loop@@              tst       SCSR                ; $BC40 7D 10 2E
+                    bpl       Loop@@              ; $BC43 2A FB
                     sta       SCDR                ; $BC45 B7 10 2F
                     rts                           ; $BC48 39
 
@@ -4275,28 +4283,26 @@ BulkErase           proc
                     bsr       BurnEEPROM          ; $BCC1 8D 14
                     bra       LBCA3               ; $BCC3 20 DE
 
-;-------------------------------------------------------------------------------
-
-                    #Cycles   6
+;*******************************************************************************
+                              #Cycles 6
 Delay10ms           proc
                     ldy       #3072               ; $BCC5 18 CE 0C 00
-                    #Cycles
+                              #Cycles
 Loop@@              dey                           ; $BCC9 18 09
                     bne       Loop@@              ; $BCCB 26 FC
-                    #temp     :cycles
+                              #temp :cycles
                     rts                           ; $BCCD 39
 
                     @ShowDelay 3072
 
-;-------------------------------------------------------------------------------
-
-                    #Cycles   6
+;*******************************************************************************
+                              #Cycles 6
 Delay4ms            proc
                     ldy       #1143               ; $BCCE 18 CE 04 77
-                    #Cycles
+                              #Cycles
 Loop@@              dey                           ; $BCD2 18 09
                     bne       Loop@@              ; $BCD4 26 FC
-                    #temp     :cycles
+                              #temp :cycles
                     rts                           ; $BCD6 39
 
                     @ShowDelay 1143
@@ -4315,7 +4321,6 @@ BurnEEPROM          proc
                     beq       Final@@             ; $BCE1 27 04
                     bsr       Delay4ms            ; $BCE3 8D E9
                     bra       Done@@              ; $BCE5 20 02
-
 Final@@             bsr       Delay10ms           ; $BCE7 8D DC
 Done@@              clr       PPROG               ; $BCE9 7F 10 3B
                     ldb       #$80                ; $BCEC C6 80
@@ -4342,27 +4347,27 @@ InitSCI             proc
                     lda       #$22                ; $BD0C 86 22
                     sta       BAUD                ; $BD0E B7 10 2B
 
-                    lda       SOME_IO             ; $BD11 B6 55 C0
+                    lda       some_io             ; $BD11 B6 55 C0
                     ora       #$40                ; $BD14 8A 40
                     anda      #$FD                ; $BD16 84 FD
-                    sta       SOME_IO             ; $BD18 B7 55 C0
+                    sta       some_io             ; $BD18 B7 55 C0
 
                     jsr       Delay10ms           ; $BD1B BD BC C5
 
                     ora       #$01                ; $BD1E 8A 01
-                    sta       SOME_IO             ; $BD20 B7 55 C0
+                    sta       some_io             ; $BD20 B7 55 C0
 
                     ldb       #$0C                ; $BD23 C6 0C
                     stb       SCCR2               ; $BD25 F7 10 2D
 
                     ora       #$80                ; $BD28 8A 80
-                    sta       SOME_IO             ; $BD2A B7 55 C0
+                    sta       some_io             ; $BD2A B7 55 C0
 
                     ora       #$04                ; $BD2D 8A 04
-                    sta       SOME_IO             ; $BD2F B7 55 C0
+                    sta       some_io             ; $BD2F B7 55 C0
 
                     ora       #$02                ; $BD32 8A 02
-                    sta       SOME_IO             ; $BD34 B7 55 C0
+                    sta       some_io             ; $BD34 B7 55 C0
 
                     lda       #$FF                ; $BD37 86 FF
                     jsr       PutChar_Hook        ; $BD39 BD 84 12
@@ -4391,30 +4396,30 @@ Delay@@             jsr       KickCOP             ; $BD51 BD A7 DB
 ;*******************************************************************************
 
 LDB63_Device        proc
-                    lda       SOME_IO             ; $BD63 B6 55 C0
+                    lda       some_io             ; $BD63 B6 55 C0
                     anda      #%11111101          ; $BD66 84 FD
-                    sta       SOME_IO             ; $BD68 B7 55 C0
+                    sta       some_io             ; $BD68 B7 55 C0
 
                     jsr       Delay10ms           ; $BD6B BD BC C5
                     anda      #%11111011          ; $BD6E 84 FB
-                    sta       SOME_IO             ; $BD70 B7 55 C0
+                    sta       some_io             ; $BD70 B7 55 C0
 
                     anda      #%01111111          ; $BD73 84 7F
-                    sta       SOME_IO             ; $BD75 B7 55 C0
+                    sta       some_io             ; $BD75 B7 55 C0
 
                     clr       SCCR2               ; $BD78 7F 10 2D
 
                     anda      #%10111111          ; $BD7B 84 BF
                     ora       #$02                ; $BD7D 8A 02
-                    sta       SOME_IO             ; $BD7F B7 55 C0
+                    sta       some_io             ; $BD7F B7 55 C0
 
                     anda      #%11111110          ; $BD82 84 FE
-                    sta       SOME_IO             ; $BD84 B7 55 C0
+                    sta       some_io             ; $BD84 B7 55 C0
                     rts                           ; $BD87 39
 
 ;*******************************************************************************
-
                     #VECTORS
+;*******************************************************************************
 
                     dw        COMMON_ISR          ; $BFD6 A9 57
                     dw        COMMON_ISR          ; $BFD8 A9 57
@@ -4443,4 +4448,4 @@ RESET_VECTOR        dw        Start               ; $BFFE A6 01
           #endif
                     end       :s19crc
 
-                    #Message  ................: 9320 bytes, RAM:.... 7, CRC: $C20E
+                    #Hint     Signature: 9320 bytes, RAM: 7, CRC: $C20E
