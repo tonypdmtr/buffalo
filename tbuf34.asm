@@ -132,7 +132,7 @@ ROM                 def       $D000
    #endif
                     #MEMORY   $FFC0 $FFD5
 #endif
-                    #OptRelOff
+                    #OptRelOn
                     #OptRtsOn
 
           #ifdef DEBUG
@@ -270,7 +270,7 @@ Start               proc
                     @SetChipSelects
           #endif
           #ifdef __WSI__
-                    @setupwsi
+                    bsr       SetupWSI
           #endif
                     ldx       #DSTREE             ; set up default eeprom address range
                     stx       STREE
@@ -290,7 +290,7 @@ Start               proc
                     std       INBUFF
                     jsr       BPCLR               ; clear breakpoints
                     jsr       ONSCI               ; initialize device
-                    ldx       #MSG1               ; buffalo message
+                    ldx       #MsgBoard           ; buffalo message
                     jsr       OUTSTRG
 ;                   bra       MAIN
 
@@ -358,7 +358,7 @@ _2@@                sta       ,x                  ; put A in buffer
                     incb
                     cmpb      #BUFFLNG
                     ble       _3@@                ; jump if not long
-                    ldx       #MSG3               ; "long"
+                    ldx       #MsgTooLong         ; "long"
                     jsr       OUTSTRG
                     bra       MAIN
 
@@ -406,7 +406,7 @@ _1@@                jsr       WCHEK
                     incb
                     cmpb      #8
                     ble       _2@@
-                    ldx       #MSG3               ; "long"
+                    ldx       #MsgTooLong         ; "long"
                     jsr       OUTSTRG
                     jmp       MAIN
 
@@ -420,7 +420,7 @@ _2@@                cbnea     #'/',_4@@           ; jump if not "/"
                     ldx       #MSLASH
                     bra       EXEC                ; execute "/"
 
-_3@@                ldx       #MSG7               ; "command?"
+_3@@                ldx       #MsgCmd             ; "command?"
                     jsr       OUTSTRG
                     jmp       MAIN
 
@@ -457,7 +457,7 @@ Loop@@              ldx       PTR1
                     cmpb      #$FF
                     bne       _2@@
 
-                    ldx       #MSG2               ; "command not found"
+                    ldx       #MsgWhat            ; "command not found"
                     jsr       OUTSTRG
                     jmp       MAIN
 
@@ -730,7 +730,7 @@ _3@@                sta       ,x                  ; write for non EE
                     cmpa      ,x
                     beq       Done@@              ; jump if write ok
                     pshx
-                    ldx       #MSG6               ; "rom"
+                    ldx       #MsgRom             ; "rom"
                     jsr       OUTSTRG
                     pulx
 Done@@              rts
@@ -1188,39 +1188,61 @@ COMTABL             @command  ASSEM
 
 ;*******************************************************************************
 ; TEXT TABLES
+;*******************************************************************************
 
 Msg                 macro     String
-                    mset      1,~@~
+                    mset      #','
                     mreq      1:String
           #if :mindex = 1
-MSG{:mindex}        fcc       ASCII_FF,CR,'TBUF34 v{VERSION(2)} (Buffalo-based Monitor) by Tony Papadimitriou <tonyp@acm.org>',LF
+~2~                 fcc       ASCII_FF,CR,'TBUF34 v{VERSION(2)} (Buffalo-based Monitor) by Tony Papadimitriou <tonyp@acm.org>',LF
                     fcc       '(Original BUFFALO by Tony Fourcroy)',LF
                     fcs       '[Target: ',~1~,' - {KHZ(3)}MHz xtal/{BUS_KHZ(3)}MHz bus]',LF
                     mexit
           #endif
-MSG{:mindex}        fcs       ~1~,LF
+~2~                 fcs       ~1~,LF
                     endm
 
 ; -------------------------------------------------------------------------------
 
           #ifdef __ASPISYS__
-                    @msg      'ASPiSYS F1 Board'
-                    @msg      'MC68HC11F1'
+                    @msg      'ASPiSYS F1 Board [MC68HC11F1]',MsgBoard
           #else ifdef __WSI__
-                    @msg      'WSI DK68HC11 Development Kit'
-                    @msg      'MC68HC11E0'
+                    @msg      'WSI DK68HC11 Development Kit [MC68HC11E0]',MsgBoard
+          #else
+                    @msg      'E9 based board [MC68HC11E9]',MsgBoard
           #endif
-                    @msg      'What?'
-                    @msg      'Too Long'
-                    @msg      'Full'
-                    @msg      'Op- '
-                    @msg      'rom-'
-                    @msg      'Command?'
-                    @msg      'Bad argument'
-                    @msg      'done'
-                    @msg      'checksum error'
-                    @msg      'error addr '
-                    @msg      'receiver error'
+                    @msg      'What?',MsgWhat
+                    @msg      'Too Long',MsgTooLong
+                    @msg      'Full',MsgFull
+                    @msg      'Rom-',MsgRom
+                    @msg      'Command?',MsgCmd
+                    @msg      'Bad argument',MsgBadArg
+                    @msg      'Done',MsgDone
+                    @msg      'Checksum error',MsgChecksum
+                    @msg      'Receiver error',MsgRxError
+                    @msg      'Mnemonic not found',MsgOpNotFound
+                    @msg      'Immediate mode illegal',MsgImmIllegal
+                    @msg      'Error in Mnemonics table',MsgMnemError
+                    @msg      'Illegal bit op',MsgIllegalBitOp
+                    @msg      'Unknown addressing mode',MsgUnknownAddrMode
+                    @msg      'Indexed addressing assumed',MsgIndAssumed
+                    @msg      'Syntax error',MsgSyntax
+                    @msg      'Branch out of range',MsgOutOfRange
+MsgAssembler        fcs       LF,'[/,=] Same  [^,-] Previous  [+,^J] Next  [CR] Next opcode  [^A,.] Quit',LF
+
+;*******************************************************************************
+; Error messages for assembler
+;*******************************************************************************
+
+MSGDIR              dw        MsgImmIllegal       ; message table index
+                    dw        MsgMnemError
+                    dw        MsgIllegalBitOp
+                    dw        MsgBadArg
+                    dw        MsgOpNotFound
+                    dw        MsgUnknownAddrMode
+                    dw        MsgIndAssumed
+                    dw        MsgSyntax
+                    dw        MsgOutOfRange
 
 ;*******************************************************************************
 ; break [-][<addr>] . . .
@@ -1270,7 +1292,7 @@ BREAK               proc
 _1@@                jsr       BUFFARG             ; get address to delete
                     jsr       DCHEK
                     beq       _2@@                ; jump if delimeter
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     bra       OUTSTRG
 
 _2@@                bsr       BPSRCH              ; look for addr in table
@@ -1302,7 +1324,7 @@ BRKDEF              proc
                     jsr       BUFFARG             ; get argument
                     jsr       DCHEK
                     beq       _1@@                ; jump if delimiter
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     bra       OUTSTRG
 
 _1@@                bsr       BPSRCH              ; look for entry in table
@@ -1331,7 +1353,7 @@ _2@@                clr       SHFTREG
                     pulx
                     tstb
                     bpl       _3@@                ; jump if table not full
-                    ldx       #MSG4               ; "full"
+                    ldx       #MsgFull            ; "full"
                     jsr       OUTSTRG
                     bra       BPRINT
 
@@ -1394,7 +1416,7 @@ BULKALL             proc
 ?BULK               lda       #-1
                     jmp       EEBULK
           #endif
-DUMPERR             ldx       #MSG8               ; "bad argument"
+DUMPERR             ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 ;*******************************************************************************
@@ -1558,7 +1580,7 @@ _2@@                jsr       OUTCRLF             ; display ee range
                     ldx       #ENDEE
                     jmp       OUT2BSP
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 ;*******************************************************************************
@@ -1619,7 +1641,7 @@ Loop@@              jsr       CHKABRT             ; check for abort
 
 Done@@              rts
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 BadAddr@@           ldx       #PTR1               ; output bad address
@@ -1657,7 +1679,7 @@ MEMORY              proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       MSLASH              ; jump if CR
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 ;-------------------------------------------------------------------------------
                     #push
@@ -1746,7 +1768,7 @@ MEM4                proc
                     cbeqa     #CR,MEMCR           ; jump if carriage ret
                     cbeqa     #'.',Done@@         ; jump if .
 
-                    ldx       #MSG7               ; "command?"
+                    ldx       #MsgCmd             ; "command?"
                     jsr       OUTSTRG
                     bra       MEM1
 Done@@              equ       :AnRTS
@@ -1807,7 +1829,7 @@ _1@@                cbnea     #$FF,_2@@           ; out of range
                     cmpb      #$81
                     bhs       _3@@                ; in range
 
-_2@@                ldx       #MSG3               ; "Too long"
+_2@@                ldx       #MsgTooLong         ; "Too long"
                     jsr       OUTSTRG
                     jmp       MEM1                ; output CR, addr, contents
 
@@ -1869,7 +1891,7 @@ MOVE                proc
                     ldx       SHFTREG             ; dest
                     bra       _2@@
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 _1@@                ldx       PTR1
@@ -2000,38 +2022,6 @@ MNEPTR              equ       PTR6                ; pointer to table for dis
 ASSCOMM             equ       PTR7                ; subcommand for assembler
 
 ;*******************************************************************************
-                    #DATA
-;*******************************************************************************
-
-; Error messages for assembler
-
-MSGDIR              dw        MSGA1               ; message table index
-                    dw        MSGA2
-                    dw        MSGA3
-                    dw        MSGA4
-                    dw        MSGA5
-                    dw        MSGA6
-                    dw        MSGA7
-                    dw        MSGA8
-                    dw        MSGA9
-
-MSGA1               fcs       'Immediate mode illegal',LF
-MSGA2               fcs       'Error in Mnemonics table',LF
-MSGA3               fcs       'Illegal bit op',LF
-MSGA4               fcs       'Bad argument',LF
-MSGA5               fcs       'Mnemonic not found',LF
-MSGA6               fcs       'Unknown addressing mode',LF
-MSGA7               fcs       'Indexed addressing assumed',LF
-MSGA8               fcs       'Syntax error',LF
-MSGA9               fcs       'Branch out of range',LF
-
-ASSEM.MSG           fcs       LF,'[/,=] Same  [^,-] Previous  [+,^J] Next  [CR] Next opcode  [^A,.] Quit',LF
-
-;*******************************************************************************
-                    #ROM
-;*******************************************************************************
-
-;*******************************************************************************
 ; oldpc = rambase;
 ; a = wskip();
 ; if (a != cr)
@@ -2041,7 +2031,7 @@ ASSEM.MSG           fcs       LF,'[/,=] Same  [^,-] Previous  [+,^J] Next  [CR] 
 ; oldpc = a;
 
 ASSEM               proc
-                    ldx       #ASSEM.MSG
+                    ldx       #MsgAssembler
                     jsr       OUTSTRG
                     ldx       #RAMBS
                     stx       OLDPC
@@ -2050,7 +2040,7 @@ ASSEM               proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       Go@@                ; jump if argument ok
-                    ldx       #MSGA4              ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 Go@@                ldx       SHFTREG
@@ -2108,7 +2098,7 @@ Cont@@              pshx
                     jsr       PARSE
                     cmpb      #5
                     ble       _1@@                ; jump if mnemonic <= 5 chars
-                    ldx       #MSGA5              ; "mnemonic not found"
+                    ldx       #MsgOpNotFound      ; "mnemonic not found"
                     jsr       OUTSTRG
                     bra       _4@@
 
@@ -2117,7 +2107,7 @@ _1@@                tstb
                     jsr       MSRCH
                     lda       CLASS
                     cbnea     #$FF,_2@@
-                    ldx       #MSGA5              ; "mnemonic not found"
+                    ldx       #MsgOpNotFound      ; "mnemonic not found"
                     jsr       OUTSTRG
                     bra       _4@@
 
@@ -2388,7 +2378,7 @@ Imm@@               ldb       CLASS               ; switch(class)
                     beq       DOREL
 
                     cmpb      #LIMM
-                    beq       DOLIM
+                    !jeq      DOLIM
 
                     cmpb      #NIMM
                     jeq       DONOI
@@ -2784,7 +2774,7 @@ DOGIMM              proc
                     jsr       EPAGE
                     lda       BASEOP
                     jsr       EMIT
-                    bsr       ASSARG
+                    !jsr      ASSARG
                     cbeqa     #4,Done@@           ; jump if arg ok
                     lda       SHFTREG+1
                     bra       DOGOTH2
@@ -2797,7 +2787,7 @@ Done@@              equ       :AnRTS
 
 DOGINDY             proc
                     lda       PY
-                    bsr       EPAGE
+                    !jsr      EPAGE
                     lda       BASEOP
                     adda      #$20
                     sta       BASEOP
@@ -2882,7 +2872,7 @@ Comma@@             jsr       INCBUFF
                     cbeqa     #'Y',Index@@
                     cbeqa     #'X',Index@@
 
-                    ldx       MSGA7               ; "index addr assumed"
+                    ldx       MsgIndAssumed       ; "index addr assumed"
                     jsr       OUTSTRG
 Index@@             lda       SHFTREG+1
                     bra       DOGOTH2
@@ -3357,7 +3347,7 @@ _2@@                cmpa      #$CF
 _3@@                cmpa      #$83
                     bne       DISGEN              ; jump not subd
                     ldb       #LIMM
-_4@@                bsr       DISRCH
+_4@@                !jsr      DISRCH
                     tstb
                     jeq       DISILLOP            ; "illegal opcode"
 ;                   bra       DISGEN
@@ -3687,7 +3677,7 @@ CALL                proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       Skip@@              ; jump if CR
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 Skip@@              ldx       SHFTREG
@@ -3774,7 +3764,7 @@ GO                  proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       CR@@                ; jump if CR
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 CR@@                ldx       SHFTREG
@@ -3886,7 +3876,7 @@ TRACE               proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       CR@@                ; jump if CR
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 CR@@                lda       SHFTREG+1           ; n
@@ -3930,7 +3920,7 @@ STOPAT              proc
                     jsr       BUFFARG
                     jsr       WSKIP
                     beq       Skip@@              ; jump if CR
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 Skip@@              tst       COUNT
@@ -4187,10 +4177,11 @@ GetRecType@@        jsr       INPUT               ; read host
 
 ; Get Byte Count and Starting Address
 
-                    bsr       GETBYTE
+                    !jsr      GETBYTE
                     ldb       SHFTREG+1
                     subb      #2                  ; B = byte count
-                    bsr:2     GETBYTE
+                    !jsr      GETBYTE
+                    bsr       GETBYTE
                     pshb                          ; save byte count
                     ldd       SHFTREG
                     addd      LDOFFST             ; add offset
@@ -4251,7 +4242,7 @@ Delay@@             jsr       DLY10MS             ; delay 1 sec -let host finish
                     jsr       INPUT               ; clear comm device
                     ldd       #$7E0D              ; put dummy command in inbuff
                     std       INBUFF
-                    ldx       #MSG9               ; "done" default msg
+                    ldx       #MsgDone            ; "done" default msg
                     lda       TMP3
                     cmpa      #2
                     bne       RcvErr@@            ; jump not ROM error
@@ -4260,12 +4251,12 @@ Delay@@             jsr       DLY10MS             ; delay 1 sec -let host finish
 
 RcvErr@@            cmpa      #1
                     bne       CksErr@@            ; jump not rcv error
-                    ldx       #MSG12              ; "rcv error"
+                    ldx       #MsgRxError         ; "rcv error"
                     bra       Done@@
 
 CksErr@@            cmpa      #3
                     bne       Done@@              ; jump not checksum error
-                    ldx       #MSG10              ; "checksum error"
+                    ldx       #MsgChecksum        ; "checksum error"
 Done@@              jmp       OUTSTRG
 
 ;*******************************************************************************
@@ -4326,7 +4317,7 @@ NoArg@@             jsr       OUTCRLF             ; display current offset
                     ldx       #LDOFFST
                     jmp       OUT2BSP
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 ;*******************************************************************************
@@ -4364,7 +4355,7 @@ Loop@@              cmpa      ,x
                     cmpb      #'S'
                     bne       Loop@@              ; jump if not "S"
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 Done@@              pshx
@@ -4393,7 +4384,7 @@ _5@@                jsr       OUTCRLF
                     jsr       TERMARG             ; read subcommand
                     jsr       DCHEK
                     beq       _6@@                ; jump if delimeter
-                    ldx       #MSG8               ; "bad argument"
+                    ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 _6@@                psha
@@ -4468,7 +4459,7 @@ Addr2@@             jsr       BUFFARG
                     jsr       WSKIP
                     beq       Default@@
 
-Fail@@              ldx       #MSG8               ; "bad argument"
+Fail@@              ldx       #MsgBadArg          ; "bad argument"
                     jmp       OUTSTRG
 
 ; Boot routine
@@ -4521,7 +4512,7 @@ BTSUB               proc
 
 TILDE               proc
                     rts
-
+#ifndef __WSI__
 ;*******************************************************************************
 ; Purpose: Calculate the same CRC as that used by ASM11
 ; Input  : X -> First byte of block
@@ -4573,11 +4564,10 @@ Done@@              pull
                     puly
                     pulx
                     rts
-
+#endif
 ;*******************************************************************************
 
                     #Push
-                    #OptRelOff
                     #SEG0
                     org       ROM_END&$F000+$0F7C
 
@@ -4585,7 +4575,7 @@ SoftVec             macro
                     mreq      1
                     mdef      2,~1~
 .~1~                exp       *
-                    jmp       ~2~
+                    !jmp      ~2~
                     endm
 
                     @softvec  WARMST,MAIN         ; warm start
@@ -4621,12 +4611,15 @@ SoftVec             macro
                     #Pull
 
 ;*******************************************************************************
-                    #Export   BPCLR,UPCASE,RPRINT,HEXBIN,WRITE,EEWRIT,EEBYTE
-                    #Export   EEBULK,DLY10MS,OUTPUT,OUTSCI,OUT1BYT,OUTCRLF
-                    #Export   OUTSTRG,TABTO,INCHAR,BULK,BULKALL,Start,INSCI
+                    #!Export  BPCLR,UPCASE,RPRINT,HEXBIN,WRITE,EEWRIT,EEBYTE
+                    #!Export  EEBULK,DLY10MS,OUTPUT,OUTSCI,OUT1BYT,OUTCRLF
+                    #!Export  OUTSTRG,TABTO,INCHAR,BULK,BULKALL,Start,INSCI
 ;*******************************************************************************
 
 ?                   macro
+          #ifdef __NOICE__
+                    mexit
+          #endif
                     mreq      1
                     mswap     1,:loop
           #ifdef    V~1~
