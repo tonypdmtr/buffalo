@@ -3,7 +3,7 @@
 ;* Programmer: Tony Papadimitriou <tonyp@acm.org>
 ;* Purpose   : Sample macro definitions for ASM11 (Win32 & Linux versions, only)
 ;* Language  : Motorola/Freescale/NXP 68HC11 Assembly Language (aspisys.com/ASM11)
-;* Status    : FREEWARE Copyright (c) 2019 by Tony Papadimitriou <tonyp@acm.org>
+;* Status    : FREEWARE Copyright (c) 2020 by Tony Papadimitriou <tonyp@acm.org>
 ;* Original  : http://www.aspisys.com/code/hc11/macros.html
 ;* Note(s)   : Use: #Uses macros.inc
 ;*******************************************************************************
@@ -409,22 +409,6 @@ sema                macro     Sema1[,Sema2]*
 MAXSEMAS            set       ~1~
           #endif
                     mtop      :n                  ;repeat for all parms
-                    endm
-
-;*******************************************************************************
-; Drop macros without warnings (Can't drop itself)
-
-Drop                macro     Macro1[,Macro2]*
-                    mreq      1:Macro1[,Macro2]*
-                    #push
-                    #NoWarn
-                    mdo
-                    mswap     1,:mloop
-          #ifnoparm ~1~ = ~0~                     ;;skip self
-                    #Drop     ~1~
-          #endif
-                    mloop     :n
-                    #pull
                     endm
 
 ;*******************************************************************************

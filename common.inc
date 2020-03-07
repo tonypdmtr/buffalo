@@ -2,7 +2,7 @@
 ;*           COMMON EQUATES -- MCU INDEPENDENT -- FOR ASM11 ASSEMBLER
 ;*******************************************************************************
 ;* Language  : Motorola/Freescale/NXP 68HC11 Assembly Language (aspisys.com/ASM11)
-;* Status    : FREEWARE Copyright (c) 2019 by Tony Papadimitriou <tonyp@acm.org>
+;* Status    : FREEWARE Copyright (c) 2020 by Tony Papadimitriou <tonyp@acm.org>
 ;* Original  : http://www.aspisys.com/code/hc11/common.html
 ;*******************************************************************************
 ; Dot-ending names (XXX.) indicates a unique bit mask (possibly multiple bits)

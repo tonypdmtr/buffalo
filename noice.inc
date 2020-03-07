@@ -122,7 +122,7 @@ CSGSIZ              equ       REGS+$5F            ;Chip Select General Address S
 
                     #ROM
 
-                    @Drop     SetChipSelects
+                    #!Drop    SetChipSelects
 
 SetChipSelects      macro                         ;Dummy
                     endm
