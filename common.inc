@@ -916,25 +916,55 @@ Vector              macro     Vvector,ISR_Address
 ; (All registers are destroyed)
 
 ;*******************************************************************************
-; PUSH any variable onto the stack. If size is missing, size one is assumed.
+; PUSH any variable onto the stack. If 'newname' given the variable will then be
+; assigned the name inside the string.
 ; Constants require a size as it cannot be determined automatically.
 ; (All registers may be destroyed)
 
-PushV               macro     Variable[ SizeOf(Variable)]
+PushV               macro     variable[ SizeOf(var)][ 'newname']
                     mset      #' '
-                    mreq      1:Variable[ SizeOf(Variable)]
+                    mset      0                   ;;cancel any stack names
+                    mreq      1:variable[ SizeOf(var)][ 'newname']
+          #ifstr ~{:nn}.~                         ;;if last parm is a string
+                    mset      0,~{:nn}.~          ;;it is the stack name
+                    mset      0,~text.2.{:text-2}~ ;;after removing quotes
+                    mdel      :nn                 ;;parm no longer needed
+          #endif
           #ifnb ~#~                               ;;immediate mode
                     mreq      1,2:Constant SizeOf(Constant)
             #if ~2~ < 0
-                    merror    Negative size: ~2~
+                    merror    Negative size (~1~): ~2~
             #endif
+                    #ifnb ~text~
+                    mset      0,~text~,~2~
+                    #endif
+                    #temp
                     mdo
+            #ifz ~#1~>{:mloop-1*8}&$FF
+              #ifz :temp
+                    #temp     1
+                    clra
+              #endif
+            #else
+                    #temp
                     lda       ~1~>{:mloop-1*8}&$FF
-                    psha
-                    mloop     ~2~
-            #ifnz ~#1~>{:mloop*8}
-                    merror    Constant ~#1~ bigger than ~2~ byte(s)
             #endif
+            #if :mloop = ~2~
+                    psha      ~text~
+            #else
+                    psha
+            #endif
+                    mloop     ~2~
+            #if ~#1~ >= 0
+              #ifnz ~#1~>{:mloop*8}
+                    merror    Constant ~#1~ ({~#1~}) bigger than ~2~ byte(s)
+              #endif
+            #else
+              #ifnz -{~#1~(h)}>{:mloop*8-1}
+                    merror    Constant ~#1~ ({~#1~}) bigger than ~2~ byte(s)
+              #endif
+            #endif
+                    #Message  ~0~ ~1~ ({~2~*8}-bit)
                     mexit
           #endif
           #ifnb ~1,~
@@ -944,20 +974,46 @@ PushV               macro     Variable[ SizeOf(Variable)]
           #endif
                     mdef      2,1
           #if ~2~ < 0
-                    merror    Negative size: ~2~
+                    merror    Negative size (~1~): ~2~
           #endif
                     #Message  ~0~ ~1~ ({~2~*8}-bit)
+                    #ifnb ~text~
+                    mset      0,~text~,~2~
+                    #endif
           #if ~2~ = 1                             ;;single-byte variable case
           #ifb ~1.1.1~ = .                        ;;but not for pointers
+            #ifparm ~'~,1~'.1.3~ = ,sp            ;;for SP and SPX only
+              #iftos ~1,~                         ;;if at TOS, special case
+                    pula                          ;;A = TOS value
+                    psha                          ;;put it back the way it was
+                    psha      ~text~
+                    mexit
+              #endif
+            #endif
                     lda       ~1~
-                    psha
+                    psha      ~text~
                     mexit
           #endif
           #endif
+                    #push                         ;;save current X offset etc.
+          #ifb ~,1~ = ,x                          ;;only if not X-indexed
+                    @@lea     ~1~                 ;;HX -> variable
+                    #x                            ;;zero X offsets
+          #else
+                    #x        ~1,~                ;;make use of offset
+          #endif
                     mdo
-                    lda       ~1,~+{~2~-:mloop},x
+                    lda       {~2~-:mloop},x
+          #if :mloop = ~2~
+                    psha      ~text~
+          #else
                     psha
+          #endif
                     mloop     ~2~
+                    #pull                         ;;restore current X offset etc.
+          #ifspauto
+                    #spadd    ~2~                 ;;needed because of #PUSH/#PULL
+          #endif
                     endm
 
 ;*******************************************************************************
@@ -973,20 +1029,36 @@ PullV               macro     Variable[ SizeOf(Variable)]
           #endif
                     mdef      2,1
           #if ~2~ < 0
-                    merror    Negative size: ~2~
+                    merror    Negative size (~1~): ~2~
           #endif
                     #Message  ~0~ ~1~ ({~2~*8}-bit)
           #if ~2~ = 1                             ;;single-byte variable case
           #ifb ~1.1.1~ = .                        ;;but not for pointers
+            #ifparm ~'~,1~'.1.3~ = ,sp            ;;for SP and SPX only
+              #iftos ~1,~                         ;;if at TOS, special case
+                    mstop     ~0~ to same stack location!
+              #endif
+            #endif
                     pula
                     sta       ~1~
                     mexit
           #endif
           #endif
+                    #push                         ;;save current X offset etc.
+          #ifb ~,1~ = ,x                          ;;only if not X-indexed
+                    @@lea     ~1~                 ;;HX -> variable
+                    #x                            ;;zero X offsets
+          #else
+                    #x        ~1,~                ;;make use of offset
+          #endif
                     mdo
                     pula
-                    sta       ~1,~+{:mloop-1},x
+                    sta       {:mloop-1},x
                     mloop     ~2~
+                    #pull                         ;;restore current X offset etc.
+          #ifspauto
+                    #spadd    -~2~                ;;needed because of #PUSH/#PULL
+          #endif
                     endm
 
 ;*******************************************************************************
@@ -1344,7 +1416,7 @@ add.b               macro     [#]Operand1,[#]Operand2[,Destination]
                     mexit
           #endif
                     lda       ~1~
-                    add       ~2~
+                    adda      ~2~
                     @_sta_    ~3~
                     endm
 
@@ -1367,18 +1439,18 @@ adc.b               macro     [#]Operand1,[#]Operand2[,Destination]
                     mswap     1,2
           #ifparm ~1~ = #0
                     clra
-                    adc       ~2~
+                    adca      ~2~
                     @_sta_    ~3~
                     mexit
           #endif
           #ifparm ~2~ = #0
                     clra
-                    adc       ~1~
+                    adca      ~1~
                     @_sta_    ~3~
                     mexit
           #endif
                     lda       ~1~
-                    adc       ~2~
+                    adca      ~2~
                     @_sta_    ~3~
                     endm
 

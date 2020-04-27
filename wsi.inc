@@ -57,45 +57,45 @@ RESERVED_VECTORS    equ       $FFC0               ;Reserved vectors (22 bytes)
 
 ; Register definitions
 
-PORTA               equ       REGS+$00            ;Port A Data
-PORTD               equ       REGS+$08            ;Port D Data
-DDRD                equ       REGS+$09            ;Data Direction Register D
-CFORC               equ       REGS+$0B            ;Timer Compare Force
-OC1M                equ       REGS+$0C            ;Output Compare 1 Mask
-OC1D                equ       REGS+$0D            ;Output Compare 1 Data
-TCNT                equ       REGS+$0E            ;Timer Count
-TIC1                equ       REGS+$10            ;Timer Input Capture 1
-TIC2                equ       REGS+$12            ;Timer Input Capture 2
-TIC3                equ       REGS+$14            ;Timer Input Capture 3
-TOC1                equ       REGS+$16            ;Timer Output Compare 1
-TOC2                equ       REGS+$18            ;Timer Output Compare 2
-TOC3                equ       REGS+$1A            ;Timer Output Compare 3
-TOC4                equ       REGS+$1C            ;Timer Output Compare 4
-TIC4                equ       REGS+$1E            ;Timer Input Capture 4
-TOC5                equ       REGS+$1E            ;Timer Output Compare 5
-TCTL1               equ       REGS+$20            ;Timer Control 1
-TCTL2               equ       REGS+$21            ;Timer Control 2
-TMSK1               equ       REGS+$22            ;Timer Interrupt Mask 1
-TFLG1               equ       REGS+$23            ;Timer Interrupt Flag 1
-TMSK2               equ       REGS+$24            ;Timer Interrupt Mask 2
-TFLG2               equ       REGS+$25            ;Timer Interrupt Flag 2
-PACTL               equ       REGS+$26            ;Pulse Accumulator Control
-PACNT               equ       REGS+$27            ;Pulse Accumulator Counter
-SPCR                equ       REGS+$28            ;SPI Control Register
-SPSR                equ       REGS+$29            ;SPI Status Register
-SPDR                equ       REGS+$2A            ;SPI Data Register
-BAUD                equ       REGS+$2B            ;Baud Rate Control Register
-SCCR1               equ       REGS+$2C            ;SCI Control 1
-SCCR2               equ       REGS+$2D            ;SCI Control 2
-SCSR                equ       REGS+$2E            ;SCI Status Register
-SCDR                equ       REGS+$2F            ;SCI Data Register
-OPTION              equ       REGS+$39            ;System Configuration Options
-COPRST              equ       REGS+$3A            ;COP Reset
-PPROG               equ       REGS+$3B            ;EEPROM Programming Control
-HPRIO               equ       REGS+$3C            ;Highest Interrupt Priority
-INIT                equ       REGS+$3D            ;INIT
-XINIT               equ       $003D               ;Out-of-reset INIT
-CONFIG              equ       REGS+$3F            ;Configuration Register
+PORTA               equ       REGS+$00,1          ;Port A Data
+PORTD               equ       REGS+$08,1          ;Port D Data
+DDRD                equ       REGS+$09,1          ;Data Direction Register D
+CFORC               equ       REGS+$0B,1          ;Timer Compare Force
+OC1M                equ       REGS+$0C,1          ;Output Compare 1 Mask
+OC1D                equ       REGS+$0D,1          ;Output Compare 1 Data
+TCNT                equ       REGS+$0E,2          ;Timer Count
+TIC1                equ       REGS+$10,2          ;Timer Input Capture 1
+TIC2                equ       REGS+$12,2          ;Timer Input Capture 2
+TIC3                equ       REGS+$14,2          ;Timer Input Capture 3
+TOC1                equ       REGS+$16,2          ;Timer Output Compare 1
+TOC2                equ       REGS+$18,2          ;Timer Output Compare 2
+TOC3                equ       REGS+$1A,2          ;Timer Output Compare 3
+TOC4                equ       REGS+$1C,2          ;Timer Output Compare 4
+TIC4                equ       REGS+$1E,2          ;Timer Input Capture 4
+TOC5                equ       REGS+$1E,2          ;Timer Output Compare 5
+TCTL1               equ       REGS+$20,1          ;Timer Control 1
+TCTL2               equ       REGS+$21,1          ;Timer Control 2
+TMSK1               equ       REGS+$22,1          ;Timer Interrupt Mask 1
+TFLG1               equ       REGS+$23,1          ;Timer Interrupt Flag 1
+TMSK2               equ       REGS+$24,1          ;Timer Interrupt Mask 2
+TFLG2               equ       REGS+$25,1          ;Timer Interrupt Flag 2
+PACTL               equ       REGS+$26,1          ;Pulse Accumulator Control
+PACNT               equ       REGS+$27,1          ;Pulse Accumulator Counter
+SPCR                equ       REGS+$28,1          ;SPI Control Register
+SPSR                equ       REGS+$29,1          ;SPI Status Register
+SPDR                equ       REGS+$2A,1          ;SPI Data Register
+BAUD                equ       REGS+$2B,1          ;Baud Rate Control Register
+SCCR1               equ       REGS+$2C,1          ;SCI Control 1
+SCCR2               equ       REGS+$2D,1          ;SCI Control 2
+SCSR                equ       REGS+$2E,1          ;SCI Status Register
+SCDR                equ       REGS+$2F,1          ;SCI Data Register
+OPTION              equ       REGS+$39,1          ;System Configuration Options
+COPRST              equ       REGS+$3A,1          ;COP Reset
+PPROG               equ       REGS+$3B,1          ;EEPROM Programming Control
+HPRIO               equ       REGS+$3C,1          ;Highest Interrupt Priority
+INIT                equ       REGS+$3D,1          ;INIT
+XINIT               equ       $003D,1             ;Out-of-reset INIT
+CONFIG              equ       REGS+$3F,1          ;Configuration Register
 
                     #MEMORY   CONFIG
 
@@ -105,43 +105,43 @@ LCD_PORT            equ       $8B00
 
 WSIREGS             equ       $8A00               ;Base for WSI internal registers
 
-DATAIN_A            equ       WSIREGS+$00
-DATAIN_B            equ       WSIREGS+$01
-DATAIN_C            equ       WSIREGS+$10
-DATAIN_D            equ       WSIREGS+$11
-DATAOUT_A           equ       WSIREGS+$04
-DATAOUT_B           equ       WSIREGS+$05
-DATAOUT_C           equ       WSIREGS+$12
-DATAOUT_D           equ       WSIREGS+$13
-DIRECTION_A         equ       WSIREGS+$06
-DIRECTION_B         equ       WSIREGS+$07
-DIRECTION_C         equ       WSIREGS+$14
-DIRECTION_D         equ       WSIREGS+$15
-DRIVE_A             equ       WSIREGS+$08
-DRIVE_B             equ       WSIREGS+$09
-DRIVE_C             equ       WSIREGS+$16
-DRIVE_D             equ       WSIREGS+$17
-OUTENABLE_A         equ       WSIREGS+$0C
-OUTENABLE_B         equ       WSIREGS+$0D
-OUTENABLE_C         equ       WSIREGS+$1A
-OUTENABLE_D         equ       WSIREGS+$1B
-CONTROL_A           equ       WSIREGS+$02
-CONTROL_B           equ       WSIREGS+$03
-IMC_A               equ       WSIREGS+$0A
-IMC_B               equ       WSIREGS+$0B
-IMC_C               equ       WSIREGS+$18
-OMC_AB              equ       WSIREGS+$20
-OMC_BC              equ       WSIREGS+$21
-OMCMASK_AB          equ       WSIREGS+$22
-OMCMASK_BC          equ       WSIREGS+$23
-MAINPROTECT         equ       WSIREGS+$C0
-ALTPROTECT          equ       WSIREGS+$C2
-JTAG                equ       WSIREGS+$C7
-PMMR0               equ       WSIREGS+$B0
-PMMR1               equ       WSIREGS+$B2
-PMMR2               equ       WSIREGS+$B4
-PAGE                equ       WSIREGS+$E0
-VM                  equ       WSIREGS+$E2
+DATAIN_A            equ       WSIREGS+$00,1
+DATAIN_B            equ       WSIREGS+$01,1
+DATAIN_C            equ       WSIREGS+$10,1
+DATAIN_D            equ       WSIREGS+$11,1
+DATAOUT_A           equ       WSIREGS+$04,1
+DATAOUT_B           equ       WSIREGS+$05,1
+DATAOUT_C           equ       WSIREGS+$12,1
+DATAOUT_D           equ       WSIREGS+$13,1
+DIRECTION_A         equ       WSIREGS+$06,1
+DIRECTION_B         equ       WSIREGS+$07,1
+DIRECTION_C         equ       WSIREGS+$14,1
+DIRECTION_D         equ       WSIREGS+$15,1
+DRIVE_A             equ       WSIREGS+$08,1
+DRIVE_B             equ       WSIREGS+$09,1
+DRIVE_C             equ       WSIREGS+$16,1
+DRIVE_D             equ       WSIREGS+$17,1
+OUTENABLE_A         equ       WSIREGS+$0C,1
+OUTENABLE_B         equ       WSIREGS+$0D,1
+OUTENABLE_C         equ       WSIREGS+$1A,1
+OUTENABLE_D         equ       WSIREGS+$1B,1
+CONTROL_A           equ       WSIREGS+$02,1
+CONTROL_B           equ       WSIREGS+$03,1
+IMC_A               equ       WSIREGS+$0A,1
+IMC_B               equ       WSIREGS+$0B,1
+IMC_C               equ       WSIREGS+$18,1
+OMC_AB              equ       WSIREGS+$20,1
+OMC_BC              equ       WSIREGS+$21,1
+OMCMASK_AB          equ       WSIREGS+$22,1
+OMCMASK_BC          equ       WSIREGS+$23,1
+MAINPROTECT         equ       WSIREGS+$C0,1
+ALTPROTECT          equ       WSIREGS+$C2,1
+JTAG                equ       WSIREGS+$C7,1
+PMMR0               equ       WSIREGS+$B0,1
+PMMR1               equ       WSIREGS+$B2,1
+PMMR2               equ       WSIREGS+$B4,1
+PAGE                equ       WSIREGS+$E0,1
+VM                  equ       WSIREGS+$E2,1
 
 ;PSD JTAG
 
