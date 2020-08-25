@@ -3474,8 +3474,8 @@ LA538               inc       $4C,x               ; $A538 6C 4C
                     ora       #$CA                ; $A553 8A CA
                     psha                          ; $A555 36
                     pshb                          ; $A556 37
-                    pshx:2                        ; $A557 3C 3C
-                    puld                          ; $A559 32 33
+                    pshx                          ; $A557 3C
+                    txd                           ; $A558 3C 32 33
                     pulx:2                        ; $A55B 38 38
                     rol       $49,x               ; $A55D 69 49
                     rolb                          ; $A55F 59
