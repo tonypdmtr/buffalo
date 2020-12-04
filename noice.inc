@@ -11,7 +11,7 @@ F1                  def       *                   ;Tells us we are using an F1 c
 __ASPISYS__         def       *                   ;Tells us we are using the ASPISYS F1 Board
 __NOICE__           def       *                   ;Tells us we are using the NOICE debugger
 
-REGS                equ       $1000               ;Register Base Address
+REGS                def       $1000               ;Register Base Address
 
 RAM                 equ       $0000               ;Start of USER RAM
 RAM_END             equ       $03FF               ;End of USER RAM

@@ -93,7 +93,6 @@ ConstValues         macro     Symbol,Value[,Value]*
 VDD                 def       5000                ;MCU voltage in mV
 
 ;===============================================================================
-
 #ifndef Hz
  #ifndef KHZ
   #ifndef MHZ
@@ -104,7 +103,7 @@ HZ                  def       9830400
   #endif
  #endif
 #endif
-
+;-------------------------------------------------------------------------------
 ?                   macro     FromHz,ToHz
                     mreq      1,2:FromHz,ToHz
 #ifdef BUS_~1~
@@ -122,9 +121,7 @@ HZ                  def       9830400
 ~1.5~               set       ~1~*4
 #endif
                     endm
-
 ;-------------------------------------------------------------------------------
-
 #ifdef BUS_MHZ
 BUS_HZ              def       BUS_MHZ*1000000
 BUS_KHZ             def       BUS_MHZ*1000
@@ -141,9 +138,7 @@ BUS_KHZ             def       BUS_HZ/1000
 BUS_MHZ             def       BUS_KHZ/1000
 
 MSEC_CYCLES         def       BUS_KHZ             ;number of cycles per millisecond
-
 ;-------------------------------------------------------------------------------
-
 ?                   macro
                     #temp     :index-1
 Bit{:temp}.         equ       1<{:temp}
@@ -151,11 +146,9 @@ Bit{:temp}.         equ       1<{:temp}
                     endm
 
                     @?                            ;Define Bit0 .. Bit15
-
 ;-------------------------------------------------------------------------------
 ; ISR (zero-based) offsets account for the return address of OS11 dispatcher's JSR
 ;-------------------------------------------------------------------------------
-
 _DATA_              equ       0                   ;start of stacked data, if any
 _CCR_               next      _DATA_,1
 _B_                 next      _DATA_,1
@@ -165,9 +158,7 @@ _Y_                 next      _DATA_,2
 _PC_                next      _DATA_,2
 
 _D_                 equ       _B_,2               ;This is for loading D reversed
-
-          ;Alternative (old style) names
-
+          ;-------------------------------------- ;Alternative (old style) names
 DATA_               equ       _DATA_              ;start of stacked data, if any
 PC_                 equ       _PC_,2
 Y_                  equ       _Y_,2
@@ -189,30 +180,22 @@ N.                  equ       %00001000           ;Negative
 Z.                  equ       %00000100           ;Zero
 V.                  equ       %00000010           ;Overflow
 C.                  equ       %00000001           ;Carry
-
-          ; BPROT Bits
-
+          ;-------------------------------------- ;BPROT Bits
 PTCON.              equ       Bit4.               ;Protect CONFIG programming
                     @bits     BPRT,0,3
-
-          ; CONFIG Bits
-
+          ;-------------------------------------- ;CONFIG Bits
 NOSEC.              equ       Bit3.               ;NOSEC (no security option)
 NOCOP.              equ       Bit2.               ;NOCOP in CONFIG register
 ROMON.              equ       Bit1.               ;ROM is ON/enabled
 EEON.               equ       Bit0.               ;EEPROM is ON/enabled
-
-          ; OPTION Bits
-
+          ;-------------------------------------- ;OPTION Bits
 ADPU.               equ       %10000000           ;A/D Power-Up
 CSEL.               equ       %01000000           ;Charge Pump Clock Select
 IRQE.               equ       %00100000           ;IRQ Select Edge Sensitive Only
 DLY.                equ       %00010000           ;Delay out of STOP mode
 CME.                equ       %00001000           ;Clock Monitor Enable
                     @bits     CR,0,1              ;COP Timer Rate Select
-
-          ; SCI Bits
-
+          ;-------------------------------------- ;SCI Bits
 TIE.                equ       %10000000           ;SCI Transmitter Interrupt Enable
 TCIE.               equ       %01000000           ;SCI Transmit Complete Interrupt Enable
 RIE.                equ       %00100000           ;SCI Receiver Interrupt Enable
@@ -229,9 +212,7 @@ IDLE.               equ       %00010000           ;SCI Idle Line Detected
 OR.                 equ       %00001000           ;SCI Overrun Error
 NF.                 equ       %00000100           ;SCI Noise Error
 FE.                 equ       %00000010           ;SCI Framing Error
-
-          ; SPI Bits
-
+          ;-------------------------------------- ;SPI Bits
 SPIE.               equ       %10000000           ;SPI Interrupt Enable
 SPE.                equ       %01000000           ;SPI Enable
 DWOM.               equ       %00100000           ;PortD OR Wired Mode
@@ -243,9 +224,7 @@ CPHA.               equ       %00000100           ;Clock Phase
 SPIF.               equ       %10000000           ;SPI Transfer Complete Flag
 WCOL.               equ       %01000000           ;Write Collision
 MODF.               equ       %00010000           ;Mode Fault
-
-          ; SPI Pins
-
+          ;-------------------------------------- ;SPI Pins
 MISO.               equ       Bit2.               ;Port D pins for manual SPI
 MOSI.               equ       Bit3.
 SCK.                equ       Bit4.
@@ -257,9 +236,7 @@ SPI_MOSI            @pin      PORTD,3
 SPI_CLK             @pin      PORTD,4
 SPI_SS              @pin      PORTD,5
           #endif
-
-          ; ADCTL (A/D Control/Status) Bits
-
+          ;-------------------------------------- ;ADCTL (A/D Control/Status) Bits
 CCF.                equ       %10000000           ;Conversions Complete Flag
 SCAN.               equ       %00100000           ;Continuous Scan Control
 MULT.               equ       %00010000           ;Multiple/Single Channel Control
@@ -267,9 +244,7 @@ CD.                 equ       %00001000           ;Channel Select D
 CC.                 equ       %00000100           ;Channel Select C
 CB.                 equ       %00000010           ;Channel Select B
 CA.                 equ       %00000001           ;Channel Select A
-
-          ; PACTL (Pulse Accumulator Control) Bits
-
+          ;-------------------------------------- ;PACTL (Pulse Accumulator Control) Bits
 DDRA7.              equ       %10000000           ;Data Directive for PortA[7]
 PAEN.               equ       %01000000           ;Pulse Accumulator System Enable
 PAMOD.              equ       %00100000           ;Pulse Accumulator Mode
@@ -277,16 +252,12 @@ PEDGE.              equ       %00010000           ;Pulse Accumulator Edge Contro
 DDRA3.              equ       %00001000           ;Data Directive for PortA[3]
 I4O5.               equ       %00000100           ;IC4/OC5 select
                     @bits     RTR,0,1             ;RTI Rate Select
-
-          ; Timer Bits
-
+          ;-------------------------------------- ;Timer Bits
 TOF.                equ       %10000000
 RTIF.               equ       %01000000
 PAOVF.              equ       %00100000
 PAIF.               equ       %00010000
-
-          ; PIOC (Parallel IO Control) Bits
-
+          ;-------------------------------------- ;PIOC (Parallel IO Control) Bits
 STAF.               equ       %10000000           ;STRA Interrupt Status Flag
 STAI.               equ       %01000000           ;STRA Interrupt Enable Mask
 CWOM.               equ       %00100000           ;Port C Wired-OR Mode
@@ -295,9 +266,7 @@ OIN.                equ       %00001000           ;Output or Input Handshake Sel
 PLS.                equ       %00000100           ;Pulse/Interlocked Handshake Operation
 EGA.                equ       %00000010           ;Active Edge for STRA
 INVB.               equ       %00000001           ;Invert STRB
-
-          ;Vectors by name
-
+          ;-------------------------------------- ;Vectors by name
 Vsci                def       $FFD6
 Vspi                def       $FFD8
 Vpai                def       $FFDA
@@ -320,9 +289,7 @@ Villop              def       $FFF8
 Vcop                def       $FFFA
 Vcmf                def       $FFFC
 Vreset              def       $FFFE
-
-          ;Miscellaneous
-
+          ;-------------------------------------- ;Miscellaneous
 BYTE                equ       1                   ;8-bit quantity
 WORD                equ       2                   ;16-bit quantity
 DWORD               equ       4                   ;32-bit quantity
@@ -859,8 +826,7 @@ lea                 macro
 gcd                 macro     a,b
           #ifz ~1~
                     mexit     1
-          #endif
-          #ifz ~2~
+          #else ifz ~2~
                     mexit     1
           #endif
           #if ~1~ = ~2~
@@ -868,8 +834,7 @@ gcd                 macro     a,b
 ~label~             set       ~1~
               #endif
                     mexit     ~1~
-          #endif
-          #if ~1~ > ~2~
+          #else if ~1~ > ~2~
                     mset      1,{~1~-{~2~}}
                     mtop
           #endif
@@ -1647,9 +1612,7 @@ fors                macro     ControlVar [#]Start [#]Stop[ [#]PositiveStep]
                     mset      #
                     @for      ~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 for                 macro     ControlVar [#]Start [#]Stop[ [#]PositiveStep]
                     mset      #' '
                     mreq      1,2,3:ControlVar [#]Start [#]Stop[ [#]PositiveStep]
@@ -1695,9 +1658,7 @@ _FindStkMth_        macro     BitVersion
             #endif
                     mexit     :temp
                     endm
-
 ;-------------------------------------------------------------------------------
-
 _StkMthMax_         macro     Expression
                     mset      #
                     mtrim     1
@@ -1755,7 +1716,6 @@ _StkMthMax_         macro     Expression
           #endif
                     @_FindStkMth_ {:temp*8}
                     endm
-
 ;-------------------------------------------------------------------------------
 ; Default version -- works with signed/unsigned operands
 ; (In :MEXIT, it returns the actual bit-size used)
@@ -1770,7 +1730,6 @@ Eval                macro     Expression
                     @@Eval{:temp} ~1~
                     mexit     {:temp}
                     endm
-
 ;-------------------------------------------------------------------------------
 ; Signed version -- gives warning to alert you if SIGNED was not defined
 ; (In :MEXIT, it returns the actual bit-size used)
@@ -1780,9 +1739,7 @@ EvalS               macro     Expression
                     @@_signed_
                     @Eval     ~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
           #if :macronest = 1
                     mstop     Macro not to be called directly (eg. use @Eval32)
@@ -1800,7 +1757,7 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
           #endif
                     mset      #
                     mreq      1:Expression (eg. [ans=](a+b)*(a-b)/2 -- spaces OK)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifb ~00~ = ~0~
                     mtrim     1                   ;;remove all spaces
                     mset      #'='                ;;split on assignment (if any)
@@ -1809,13 +1766,13 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
             #endif
             #if :nn > 1
                     @@~0~     ~2~
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                     mset      9                   ;;assume signed (when SIGNED)
           #ifparm ~1.1.1~~1.{:1}~ = []
                     mset      9,unsigned
                     mset      1,~1.2.{:1-2}~
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
               #ifparm ~1.1.1~ = .                 ;;pointers ...
                 #if ~text,~/8 <> ~text','2~/8
                     @@ResizeTOS #~text,~/8\,#~text','2~/8\,\,~9~
@@ -1833,7 +1790,7 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     merror    Unknown variable \@~1~\@
             #endif
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifstr ~1~
             #if :1-2 > 4
                     mstop     String constant (~1~) too long
@@ -1841,7 +1798,7 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     @Load~text,~ #~1~
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifparm ~1.1.1~ = -                     ;;process leading negative
             #ifnum ~1~
                     @Load~text,~ #~1~             ;;numerics use immediate mode
@@ -1856,7 +1813,7 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     @~0~      #0~1~               ;;anything else, subtract from zero
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                     mset      #'+-|^'             ;;split terms
           #if :nn > 1
                     mdo       2
@@ -1887,7 +1844,7 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     mloop     :nn
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                     mset      #'*\/&><'           ;;split factors
           #if :nn > 1
                     mdo       2
@@ -1928,21 +1885,21 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     mloop     :nn
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifparm ~1.1.4~~1.{:1}~ = NEG()         ;;do NEG(ate) function
                     @@~0~     ~1.5.{:1-5}~
                     #Message  Neg~text,~
                     !jsr      StackNegate~text,~
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifparm ~1.1.4~~1.{:1}~ = ABS()         ;;do ABS(olute) function
                     @@~0~     ~1.5.{:1-5}~
                     #Message  Abs~text,~
                     !jsr      StackAbs~text,~
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifparm ~1.1.4~~1.{:1}~ = SQR()         ;;do SQR() function -- square
                     @@~0~     ~1.5.{:1-5}~
                     #Message  Sqr~text,~(TOS)
@@ -1951,18 +1908,18 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
                     !jsr      StackMul~text,~
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifparm ~1.1.1~~1.{:1}~ = ()            ;;process parenthesized sub-expression
                     @~0~      ~1.2.{:1-2}~
                     mexit
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                     mset      9                   ;;assume signed (when SIGNED)
           #ifparm ~1.1.1~~1.{:1}~ = []
                     mset      9,unsigned
                     mset      1,~1.2.{:1-2}~
           #endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           #ifnum ~#1~
                     mset      1,#~#1~             ;;numerics use immediate mode
           #endif
@@ -1993,65 +1950,47 @@ _Eval_              macro     [BitSize,]Expression (eg. [ans=](a+b)*(a-b)/2)
           #endif
                     @Load~text,~ ~1~              ;;anything else, load as is
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval8               macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval16              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval24              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval32              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval40              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval48              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval56              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Eval64              macro
                     mset      #
                     @_Eval_   ~0.5~\,~1~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 StrMath             macro
           #ifnb ~1~
             #ifdef ~1,~
@@ -2067,39 +2006,27 @@ StrMath             macro
                     #temp     :mexit
                     @_DoStr   {:temp}\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str16               macro     [Number],[ResultString]
                     @_DoStr   16\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str24               macro     [Number],[ResultString]
                     @_DoStr   24\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str32               macro     [Number],[ResultString]
                     @_DoStr   32\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str40               macro     [Number],[ResultString]
                     @_DoStr   40\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str48               macro     [Number],[ResultString]
                     @_DoStr   48\,~1~\,~2~
                     endm
-
 ;-------------------------------------------------------------------------------
-
 Str64               macro     [Number],[ResultString]
                     @_DoStr   64\,~1~\,~2~
                     endm
@@ -2256,11 +2183,11 @@ f~1~                exp       :mindex-1
                     mset      0,{:pc}
 NUMBER_OF_OS_CALLS  set       :mindex             ;Number of opcodes defined (so far)
                     org       :ppc
-          #if :mindex > MAX_OS_CALLS
-                    merror    {MAX_OS_CALLS} MAX_OS_CALLS, need {:mindex} (+{:mindex-MAX_OS_CALLS})
-          #endif
           #if :mindex > 256
                     #Warning  Double byte opcodes, OS => OSW
+          #endif
+          #if :mindex > MAX_OS_CALLS
+                    merror    {MAX_OS_CALLS} MAX_OS_CALLS, need {:mindex} (+{:mindex-MAX_OS_CALLS})
           #endif
                     #pull
 ;-------------------------------------------------------------------------------
@@ -2341,9 +2268,9 @@ ASCII_RS            def       30                  ;Record Separator
 ASCII_US            def       31                  ;Unit Separator
 
 DDR                 def       1                   ;standard DDR offset
-
-;---------------------------- Miscellaneous ------------------------------------
-
+;-------------------------------------------------------------------------------
+;                             Miscellaneous
+;-------------------------------------------------------------------------------
 SPEED_SIZE          def       2                   ;1 = SPEED, 2 = SIZE optimization
                     @ConstMinMax SPEED_SIZE,1,2
 
@@ -2367,13 +2294,11 @@ REQUIRED_STACK      def       50                  ;required stack bytes
 MAX_OS_CALLS        def       200                 ;default room for OS calls (68HC11)
 
 ;*******************************************************************************
+; Various Checks
 
-          ; Various Checks
-#ifdef REGS
-          #ifnz REGS&$0FFF
+          #!ifnz REGS&$0FFF
                     #Error    REGS ({REGS(h)}) not in format $X000 (edit ?11E?.INC)
           #endif
-#endif
 
 ?                   macro     FromAddress,ToAddress
                     mdef      2,STACKTOP-REQUIRED_STACK
@@ -2384,22 +2309,20 @@ MAX_OS_CALLS        def       200                 ;default room for OS calls (68
           #ifdef RAM1
                     @?        RAM1,RAM1_END
           #endif
-
-#ifdef XRAM
-          #if STACKTOP > XRAM
+          #ifdef XRAM
+            #if STACKTOP > XRAM
                     @?        RAM,RAM_END
                     @?        XRAM
-          #else
+            #else
                     @?        RAM
                     @?        XRAM,XRAM_END
-          #endif
-#else
+            #endif
+          #else
                     @?        RAM
-#endif
+          #endif
           #ifdef VERSION
                     #Message  Firmware v{VERSION(2)}
           #endif
-
                     #Message  MCU Operating Voltage (VDD): {VDD(3)}V
 
           #ifz KHZ\1000
