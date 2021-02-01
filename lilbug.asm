@@ -143,7 +143,7 @@ OUTCH               !jmp      OUTCH1              ; OUTPUT 1 CHAR W/PADDING
                     !jmp      OUT4HS              ; PR 4 HEX + SP (X)
                     !jmp      PCRLF               ; PRINT CR/LF
                     !jmp      SPACE               ; PRINT A SPACE
-STRT                !jmp      START               ; RESTART ADDRESS
+STRT                !jmp      Start               ; RESTART ADDRESS
 IN.SWI              !jmp      M.SWI               ; SWI VECTOR
 
 ;***** FUNCTION JUMP TABLE *****
