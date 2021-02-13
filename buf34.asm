@@ -3500,7 +3500,6 @@ DISBIT1             jsr       OUTSPAC
 DISBIT2             jsr       DISRELAD            ; relative address
                     rts
 
-
 ;*Elseif($60 <= opcode <= $7F)  /*  GRP2 */
 ;*   if(pnorm == (PG3 or PG4))
 ;*      disillop(); return();
@@ -3859,7 +3858,6 @@ DISEXT              proc
                     jsr       OUT2BSP
                     stx       DISPC
                     rts
-
 
 ;*******************************************************************************
 ;*disillop() - output "illegal opcode"

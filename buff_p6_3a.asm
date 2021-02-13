@@ -748,7 +748,6 @@ CHGBYT              tst       COUNT
                     bsr       WRITE
 CHGBYT4             rts
 
-
 ;*****************
 ; WRITE() - This routine is used to write the
 ; *contents of A to the address of X.  If the
@@ -785,7 +784,6 @@ WRITE2              staa      0,X                 ; write for non EE
                     jsr       OUTSTRG
                     pulx
 WRITE3              rts
-
 
 ;*****************
 ;   EEWRIT(), EEBYTE(), EEBULK() -
@@ -834,7 +832,6 @@ DLYLP               dex
                     pulx
                     clr       PPROG
                     rts
-
 
 ;*****************
 ;  READBUFF() -  Read the character in INBUFF
@@ -1351,7 +1348,6 @@ OUTSTRG2            jsr       INPUT
 OUTSTRG3            pula
                     rts
 
-
 ;*********
 ;  TABTO() - move cursor over to column 20.
 ; *while(chrcnt < 16) outspac.
@@ -1668,7 +1664,6 @@ BPSRCH2             incb
                     ldab      #$FF
                     rts
 
-
 ;**********
 ;  bulk  - Bulk erase the eeprom not config.
 ; bulkall - Bulk erase eeprom and config.
@@ -1681,8 +1676,6 @@ BULKALL             ldx       #CONFIG
 BULK1               ldaa      #$FF
                     jsr       EEBULK
                     rts
-
-
 
 ;**********
 ;  dump [<addr1> [<addr2>]]  - Dump memory
@@ -1813,8 +1806,6 @@ DUMP4               jsr       OUTPUT              ; output ascii value
                     blo       DUMPLP              ; upper bound not at top
 DUMP5               rts                           ; quit
 
-
-
 ;**********
 ;   eemod [<addr1> [<addr2>]]
 ; Modifies the eeprom address range.
@@ -1863,9 +1854,6 @@ EEMOD2              jsr       OUTCRLF             ; display ee range
 EEMODER             ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
-
-
-
 
 ;**********
 ;  fill <addr1> <addr2> [<data>]  - Block fill
@@ -1939,8 +1927,6 @@ FILLBAD             equ       *
                     ldx       #PTR1               ; output bad address
                     jsr       OUT2BSP
                     rts
-
-
 
 ;*******************************************
 ;   MEMORY [<addr>]
@@ -2104,7 +2090,6 @@ MEMOFF3             subd      #$1                 ; b now has offset
 MEMCR               jsr       CHGBYT
 MEMEND              rts                           ; exit task
 
-
 ;**********
 ;   move <src1> <src2> [<dest>]  - move
 ; *block at <src1> to <src2> to <dest>.
@@ -2193,7 +2178,6 @@ MOVELP1             jsr       CHKABRT             ; check for abort
 ;     for(x=src1; x=src2; x++)
 ;          dest[0]++ = x[0]++;
 
-
 MOVE3               ldx       PTR1                ; srce1
 MOVELP2             jsr       CHKABRT             ; check for abort
                     ldaa      ,X
@@ -2216,7 +2200,6 @@ MOVEBAD             pulx                          ; restore stack
                     ldx       #PTR3
                     jsr       OUT2BSP             ; output bad address
                     rts
-
 
 ;****************
 ;  assem(addr) -68HC11 line assembler/disassembler.
@@ -2522,7 +2505,6 @@ RLN3                bsr       ASSCHEK             ; check for subcommand
 RLNQUIT             clra                          ; quit
                     rts                           ; return
 
-
 ;**********
 ;  parse() -parse out the mnemonic from INBUFF
 ; to COMBUFF. on exit: b=number of chars parsed.
@@ -2557,7 +2539,6 @@ PARSLP              jsr       READBUFF            ; read character
                     ble       PARSLP              ; loop 6 times
 PARSRT              rts
 
-
 ;****************
 ;  asschek() -perform compares for
 ; lf, cr, ^, /, +, -, =
@@ -2576,7 +2557,6 @@ ASSCHEK             cmpa      #$0A                ; linefeed
                     beq       ASSCHK1
                     cmpa      #'='                ; equals
 ASSCHK1             rts
-
 
 ;*********
 ;  msrch() --- Search MNETABL for mnemonic in COMBUFF.
@@ -3021,7 +3001,6 @@ DOSET6              tba                           ; offset
                     jsr       EMIT
                     clra
                     rts
-
 
 ;**********
 ;**   bitop(baseop,amode,class) --- adjust opcode on bit
@@ -3923,7 +3902,6 @@ DISBIT1             jsr       OUTSPAC
 DISBIT2             jsr       DISRELAD            ; relative address
 DISBIT3             rts
 
-
 ; *Elseif($60 <= opcode <= $7F)  /*  GRP2 */
 ;   if(pnorm == (PG3 or PG4))
 ;      disillop(); return();
@@ -4102,7 +4080,6 @@ DISXLN5             ldab      #LIMM
                     bsr       DISGENRL            ; process general class
                     rts
 
-
 ;******************
 ; *disrch(a=opcode,b=class)
 ; *return b=0 if not found
@@ -4217,7 +4194,6 @@ DISRLD2             stx       BRADDR              ; save address
                     jsr       OUT2BSP             ; output address
                     rts
 
-
 ;******************
 ; *disgenrl() - output data for the general cases which
 ; *includes immediate, direct, indexed, and extended modes.
@@ -4290,7 +4266,6 @@ DISEXT              equ       *
                     stx       DISPC
                     rts
 
-
 ;*****************
 ; *disillop() - output "illegal opcode"
 ;*****************
@@ -4302,8 +4277,6 @@ DISILLOP            equ       *
                     jsr       OUTSTRG0            ; no cr
                     pulx
                     rts
-
-
 
 ;**********
 ;   help  -  List buffalo commands to terminal.
@@ -4358,8 +4331,6 @@ HELPMSG1            equ       *
                     fcb       $0D
                     fcb       4
 
-
-
 ;**********
 ;   call [<addr>] - Execute a jsr to <addr> or user
 ; *pc value.  Return to monitor via  rts or breakpoint.
@@ -4413,7 +4384,6 @@ RETURN              psha                          ; save a register
                     jsr       OUTCRLF
                     jsr       RPRINT              ; print user registers
                     rts
-
 
 ;**********
 ;   proceed - Same as go except it ignores
@@ -4537,7 +4507,6 @@ REMBPS2             addb      #$2
                     stx       JSWI+1
                     rts
 
-
 ;**********
 ;   trace <n> - Trace n instructions starting
 ; *at user's pc value. n is a hex number less than
@@ -4587,7 +4556,6 @@ TRACE3              jsr       OUTCRLF
 
 TRACDON             rts
 
-
 ;**********
 ;   stopat <addr> - Trace instructions until <addr>
 ; *is reached.
@@ -4627,7 +4595,6 @@ STOPNEXT            bsr       RUNONE
 STOPDON             jsr       OUTCRLF
                     jsr       RPRINT              ; result of trace
                     rts                           ; done
-
 
 ;*************************
 ; runone - This routine is used by the trace and
@@ -4705,7 +4672,6 @@ SAVSTACK            equ       *
                     ldaa      #$08
                     staa      CFORC
                     rts
-
 
 ;**********
 ;   HOST() - Establishes transparent link between
@@ -4785,7 +4751,6 @@ TXBWAIT1            dey                           ; 7 cycle loop
                     bne       TXBWAIT1
                     rts
 
-
 ;**********
 ;   hostinit(), hostin(), hostout() - host i/o
 ; *routines.  Restores original terminal device.
@@ -4812,7 +4777,6 @@ HOSTOUT             ldab      IODEV               ; save terminal
 TERMRES             pulb                          ; restore terminal device
                     stab      IODEV
                     rts
-
 
 ;**********
 ;   load(ptrbuff[]) - Load s1/s9 records from
@@ -4987,7 +4951,6 @@ LOAD93              cmpa      #$03
 LOAD94              jsr       OUTSTRG
 LOAD95              rts
 
-
 ;**********
 ;  byte() -  Read 2 ascii bytes from host and
 ; *convert to one hex byte.  Returns byte
@@ -5009,7 +4972,6 @@ BYTE1               jsr       HOSTIN              ; read host (2nd byte)
                     pulx
                     pulb
                     rts
-
 
 ;**********
 ;   offset [<addr>]
@@ -5049,10 +5011,6 @@ OFFST3              jsr       OUTCRLF             ; display current offset
 OFFSTER             ldx       #MSG9               ; "bad argument"
                     jsr       OUTSTRG
                     rts
-
-
-
-
 
 ;**********
 ;   register [<name>]  - prints the user regs
@@ -5142,7 +5100,6 @@ REG8                pulx
                     cmpa      #$D
                     bne       REG5                ; jump if not cr
 REG9                rts
-
 
 ; Equates
 JPORTD              equ       $08
@@ -5240,7 +5197,6 @@ BTSUB               equ       *
                     brclr     JSCSR,X,#80,*       ; wait for TDRE
                     rts
 
-
 ;***********
 ; TILDE - This command is put into the combuff by the
 ; load command so that extraneous carriage returns after
@@ -5283,8 +5239,6 @@ DONE                clr       TMP2                ; Set load vs. verify
 MSGEVB              fcc       'cat evbtest.out'
                     fcb       $0D
                     fcb       $04
-
-
 
 ;*** Jump table ***
                     org       ROMBS+$1F7C

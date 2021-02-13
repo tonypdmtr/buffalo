@@ -1443,7 +1443,6 @@ BPSRCH2             incb
                     ldb       #$FF
                     rts
 
-
 ;**********
 ;  bulk  - Bulk erase the eeprom except the
 ; config register.
@@ -2141,7 +2140,6 @@ TXBWAIT1            dey                           ; 7 cycle loop
                     bne       TXBWAIT1
                     rts
 
-
 ;**********
 ;   hostinit(), hostin(), hostout() - host i/o
 ; *routines.  Restores original terminal device.
@@ -2169,7 +2167,6 @@ TERMRES             pulb                          ; restore terminal device
                     stb       IODEV
                     rts
 
-
 ;**********
 ;   load(ptrbuff[]) - Load s1/s9 records from
 ; *host to memory.  Ptrbuff[] points to string in
@@ -2186,7 +2183,6 @@ VERIFY              clr       TMP2
                     bra       LOAD1
 
 LOAD                clr       TMP2                ; flagt1 = 0 = load
-
 
 ; *a=wskip();
 ; *if(a = cr) goto transparent mode;
@@ -2337,7 +2333,6 @@ BYTE1               jsr       HOSTIN              ; read host (2nd byte)
                     pulb
                     rts
 
-
 ;*******************************************
 ;   MEMORY [<addr>]
 ;   [<addr>]/
@@ -2485,7 +2480,6 @@ MEMOFF3             subd      #$1                 ; b now has offset
 MEMCR               jsr       CHGBYT
                     rts                           ; exit task
 
-
 ;**********
 ;   move <src1> <src2> [<dest>]  - move
 ; *block at <src1> to <src2> to <dest>.
@@ -2579,7 +2573,6 @@ MOVEA               sta       ,x                  ; dest
 ;     for(x=src1; x=src2; x++)
 ;          dest[0]++ = x[0]++;
 
-
 MOVE3               ldx       PTR1                ; srce1
 MOVELP2             jsr       CHKABRT             ; check for abort
                     lda       ,x
@@ -2622,7 +2615,6 @@ MOVEDLY             dex
                     pulx
                     pulb
                     rts
-
 
 ;**********
 ;   register [<name>]  - prints the user regs
@@ -2921,7 +2913,6 @@ ASSLP5              clr       ASSCOMM             ; error command
 ;        oldpc=dispc;
 ; *until(eot)
 
-
 ASSLP10             equ       *
                     lda       ASSCOMM
                     cmpa      #'^'
@@ -3012,7 +3003,6 @@ RLN3                bsr       ASSCHEK             ; check for subcommand
 RLNQUIT             clra                          ; quit
                     rts                           ; return
 
-
 ;**********
 ;  parse() -parse out the mnemonic from INBUFF
 ; to COMBUFF. on exit: b=number of chars parsed.
@@ -3047,7 +3037,6 @@ PARSLP              jsr       READBUFF            ; read character
                     ble       PARSLP              ; loop 6 times
 PARSRT              rts
 
-
 ;****************
 ;  asschek() -perform compares for
 ; cr, lf, ^, /
@@ -3060,7 +3049,6 @@ ASSCHEK             cmpa      #$0A                ; linefeed
                     beq       ASSCHK1
                     cmpa      #'/'                ; slash
 ASSCHK1             rts
-
 
 ;*********
 ;  msrch() --- Search MNETABL for mnemonic in COMBUFF.
@@ -3507,7 +3495,6 @@ DOSET6              tba                           ; offset
                     jsr       EMIT
                     clra
                     rts
-
 
 ;**********
 ;**   bitop(baseop,amode,class) --- adjust opcode on bit
@@ -4409,7 +4396,6 @@ DISBIT1             jsr       OUTSPAC
 DISBIT2             jsr       DISRELAD            ; relative address
 DISBIT3             rts
 
-
 ; *Elseif($60 <= opcode <= $7F)  /*  GRP2 */
 ;   if(pnorm == (PG3 or PG4))
 ;      disillop(); return();
@@ -4588,7 +4574,6 @@ DISXLN5             ldb       #LIMM
                     bsr       DISGENRL            ; process general class
                     rts
 
-
 ;******************
 ; *disrch(a=opcode,b=class)
 ; *return b=0 if not found
@@ -4703,7 +4688,6 @@ DISRLD2             stx       BRADDR              ; save address
                     jsr       OUT2BSP             ; output address
                     rts
 
-
 ;******************
 ; *disgenrl() - output data for the general cases which
 ; *includes immediate, direct, indexed, and extended modes.
@@ -4775,7 +4759,6 @@ DISEXT              equ       *
                     jsr       OUT2BSP
                     stx       DISPC
                     rts
-
 
 ;*****************
 ; *disillop() - output "illegal opcode"
