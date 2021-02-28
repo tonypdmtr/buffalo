@@ -4887,37 +4887,21 @@ MSGEVB              fcc       'cat evbtest.out'
                     org       ROMBS+$1FA0
 ;*** Jump table ***
 .UPCASE             jmp       UPCASE
-
 .WCHEK              jmp       WCHEK
-
 .DCHEK              jmp       DCHEK
-
 .INIT               jmp       INIT
-
 .INPUT              jmp       INPUT
-
 .OUTPUT             jmp       OUTPUT
-
 .OUTLHL             jmp       OUTLHLF
-
 .OUTRHL             jmp       OUTRHLF
-
 .OUTA               jmp       OUTA
-
 .OUT1BY             jmp       OUT1BYT
-
 .OUT1BS             jmp       OUT1BSP
-
 .OUT2BS             jmp       OUT2BSP
-
 .OUTCRL             jmp       OUTCRLF
-
 .OUTSTR             jmp       OUTSTRG
-
 .OUTST0             jmp       OUTSTRG0
-
 .INCHAR             jmp       INCHAR
-
 .VECINT             jmp       VECINIT
 
                     org       ROMBS+$1FD6

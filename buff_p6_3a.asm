@@ -5167,7 +5167,7 @@ BOT2                ldab      #$FF                ; control character ($ff -> do
 ; *Download block
 BLOP                ldaa      0,Y
                     staa      JSCDAT,X            ; write to transmitter
-                    brclr     JSCSR,X,#80,*       ; wait for TDRE
+                    brclr     JSCSR,X,$80,*       ; wait for TDRE
                     cpy       PTR5                ; if last...
                     beq       BTDONE              ; ...quit
                     iny                           ; else...
@@ -5194,7 +5194,7 @@ BTSUB               equ       *
                     ldaa      #$0C                ; TURN ON XMTR & RCVR
                     staa      JSCCR2,X
                     stab      JSCDAT,X
-                    brclr     JSCSR,X,#80,*       ; wait for TDRE
+                    brclr     JSCSR,X,$80,*       ; wait for TDRE
                     rts
 
 ;***********
@@ -5243,62 +5243,33 @@ MSGEVB              fcc       'cat evbtest.out'
 ;*** Jump table ***
                     org       ROMBS+$1F7C
 .WARMST             jmp       MAIN                ; warm start
-
 .BPCLR              jmp       BPCLR               ; clear breakpoint table
-
 .RPRINT             jmp       RPRINT              ; display user registers
-
 .HEXBIN             jmp       HEXBIN              ; convert ascii hex char to binary
-
 .BUFFAR             jmp       BUFFARG             ; build hex argument from buffer
-
 .TERMAR             jmp       TERMARG             ; read hex argument from terminal
-
 .CHGBYT             jmp       CHGBYT              ; modify memory at address in x
-
 .READBU             jmp       READBUFF            ; read character from buffer
-
 .INCBUF             jmp       INCBUFF             ; increment buffer pointer
-
 .DECBUF             jmp       DECBUFF             ; decrement buffer pointer
-
 .WSKIP              jmp       WSKIP               ; find non-whitespace char in buffer
-
 .CHKABR             jmp       CHKABRT             ; check for abort from terminal
-
-                    org       ROMBS+$1FA0
 .UPCASE             jmp       UPCASE              ; convert to upper case
-
 .WCHEK              jmp       WCHEK               ; check for white space
-
 .DCHEK              jmp       DCHEK               ; check for delimeter
-
 .INIT               jmp       INIT                ; initialize i/o device
-
 .INPUT              jmp       INPUT               ; low level input routine
-
 .OUTPUT             jmp       OUTPUT              ; low level output routine
-
 .OUTLHL             jmp       OUTLHLF             ; display top 4 bits as hex digit
-
 .OUTRHL             jmp       OUTRHLF             ; display bottom 4 bits as hex digit
-
 .OUTA               jmp       OUTA                ; output ascii character in A
-
 .OUT1BY             jmp       OUT1BYT             ; display the hex value of byte at X
-
 .OUT1BS             jmp       OUT1BSP             ; out1byt followed by space
-
 .OUT2BS             jmp       OUT2BSP             ; display 2 hex bytes at x and a space
-
 .OUTCRL             jmp       OUTCRLF             ; carriage return, line feed to terminal
-
 .OUTSTR             jmp       OUTSTRG             ; display string at X (term with $04)
-
 .OUTST0             jmp       OUTSTRG0            ; outstrg with no initial carr ret
-
 .INCHAR             jmp       INCHAR              ; wait for and input a char from term
-
 .VECINT             jmp       VECINIT             ; initialize RAM vector table
 
                     end

@@ -463,14 +463,23 @@ EXEC                jsr       0,X                 ; call task as subroutine
                     jmp       MAIN
 
 ;
+
 ;*****************
+
 ;   UTILITY SUBROUTINES - These routines
+
 ; are called by any of the task routines.
+
 ;*****************
+
 ;*****************
+
 ;  UPCASE(a) - If the contents of A is alpha,
+
 ; returns a converted to uppercase.
+
 ;*****************
+
 UPCASE              cmpa      #'a'
                     blt       UPCASE1             ; jump if < a
                     cmpa      #'z'
@@ -697,6 +706,7 @@ EEWRIT              equ       *                   ; program one byte at x
                     bra       EEPROG
 
 ;***
+
 EEBYTE              equ       *                   ; byte erase address x
                     pshb
                     ldab      #$16
@@ -707,6 +717,7 @@ EEBYTE              equ       *                   ; byte erase address x
                     bra       EEPROG
 
 ;***
+
 EEBULK              equ       *                   ; bulk erase eeprom
                     pshb
                     ldab      #$06
@@ -860,6 +871,7 @@ VECNEXT             abx                           ; Add 3 to point at next vecto
                     rts
 
 ;
+
 STOPIT              ldaa      #$50                ; Stop-enable; IRQ, XIRQ-Off
                     tap
                     stop                          ; You are lost! Shut down
@@ -1124,8 +1136,11 @@ OUTACIA3            ldx       #ACIA
                     rts
 
 ;
+
 ;        Space for modifying OUTACIA routine
+
 ;
+
                     fdb       $FFFF,$FFFF,$FFFF,$FFFF
 ;*******************************
 ;*** I/O UTILITY SUBROUTINES ***
@@ -2042,8 +2057,11 @@ MOVELP1             jsr       CHKABRT             ; check for abort
                     bra       MOVELP1             ; Loop SRC2 - SRC1 times
 
 ;
+
 ; else
+
 ;     for(x=src1; x=src2; x++)
+
 ;          dest[0]++ = x[0]++;
 
 MOVE3               ldx       PTR1                ; srce1
@@ -2505,6 +2523,7 @@ DOPLP2              cmpb      #'X'                ; look for ",x"
                     bne       DOOP1               ; jump if not x
                     ldaa      #INDX
                     staa      AMODE
+;                   bra       DOOP1
 
 DOOP1               jsr       WSKIP
                     cmpa      #'#'                ; look for immediate mode
@@ -4773,6 +4792,7 @@ LOAD21              cmpa      0,X                 ; verify ram location
                     bra       LOAD20              ; finish download
 
 ;** Get and Test Checksum
+
 LOAD30              tst       TMP3
                     bne       LOAD10              ; jump if error already
                     ldaa      TMP4
@@ -5016,6 +5036,7 @@ BOT1                jsr       BUFFARG
                     bra       BOT2                ; continue
 
 ;
+
 BOT1A               jsr       BUFFARG
                     tst       COUNT
                     beq       BOTERR              ; jump if no address
@@ -5037,7 +5058,7 @@ BOT2                ldab      #$FF                ; control character ($ff -> do
 ; *Download block
 BLOP                ldaa      0,Y
                     staa      JSCDAT,X            ; write to transmitter
-                    brclr     JSCSR,X,#80,*       ; wait for TDRE
+                    brclr     JSCSR,X,$80,*       ; wait for TDRE
                     cpy       PTR5                ; if last...
                     beq       BTDONE              ; ...quit
                     iny                           ; else...
@@ -5064,7 +5085,7 @@ BTSUB               equ       *
                     ldaa      #$0C                ; TURN ON XMTR & RCVR
                     staa      JSCCR2,X
                     stab      JSCDAT,X
-                    brclr     JSCSR,X,#80,*       ; wait for TDRE
+                    brclr     JSCSR,X,$80,*       ; wait for TDRE
                     rts
 
 ;***********
@@ -5113,62 +5134,33 @@ MSGEVB              fcc       'cat evbtest.out'
 ;*** Jump table ***
                     org       ROMBS+$1F7C
 .WARMST             jmp       MAIN                ; warm start
-
 .BPCLR              jmp       BPCLR               ; clear breakpoint table
-
 .RPRINT             jmp       RPRINT              ; display user registers
-
 .HEXBIN             jmp       HEXBIN              ; convert ascii hex char to binary
-
 .BUFFAR             jmp       BUFFARG             ; build hex argument from buffer
-
 .TERMAR             jmp       TERMARG             ; read hex argument from terminal
-
 .CHGBYT             jmp       CHGBYT              ; modify memory at address in x
-
 .READBU             jmp       READBUFF            ; read character from buffer
-
 .INCBUF             jmp       INCBUFF             ; increment buffer pointer
-
 .DECBUF             jmp       DECBUFF             ; decrement buffer pointer
-
 .WSKIP              jmp       WSKIP               ; find non-whitespace char in buffer
-
 .CHKABR             jmp       CHKABRT             ; check for abort from terminal
-
-                    org       ROMBS+$1FA0
 .UPCASE             jmp       UPCASE              ; convert to upper case
-
 .WCHEK              jmp       WCHEK               ; check for white space
-
 .DCHEK              jmp       DCHEK               ; check for delimeter
-
 .INIT               jmp       INIT                ; initialize i/o device
-
 .INPUT              jmp       INPUT               ; low level input routine
-
 .OUTPUT             jmp       OUTPUT              ; low level output routine
-
 .OUTLHL             jmp       OUTLHLF             ; display top 4 bits as hex digit
-
 .OUTRHL             jmp       OUTRHLF             ; display bottom 4 bits as hex digit
-
 .OUTA               jmp       OUTA                ; output ascii character in A
-
 .OUT1BY             jmp       OUT1BYT             ; display the hex value of byte at X
-
 .OUT1BS             jmp       OUT1BSP             ; out1byt followed by space
-
 .OUT2BS             jmp       OUT2BSP             ; display 2 hex bytes at x and a space
-
 .OUTCRL             jmp       OUTCRLF             ; carriage return, line feed to terminal
-
 .OUTSTR             jmp       OUTSTRG             ; display string at X (term with $04)
-
 .OUTST0             jmp       OUTSTRG0            ; outstrg with no initial carr ret
-
 .INCHAR             jmp       INCHAR              ; wait for and input a char from term
-
 .VECINT             jmp       VECINIT             ; initialize RAM vector table
 
                     org       ROMBS+$1FD6
