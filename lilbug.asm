@@ -7,13 +7,13 @@
 
 ; FOR VDG, SET VDG = 0,
 ; FOR NON-VDG, SET VDG = 1
-VDG                 equ       1
+VDG                 def       1
 
 ; FOR ON-CHIP IO, SET CHIPIO = 0
 ; FOR ACIA TEST SET CHIPIO = 1
-CHIPIO              equ       0
+CHIPIO              def       0
 
-          #ifz      VDG
+          #ifz VDG
                     #Message  6801 MONITOR WITH VDG MODS
 VDGORG              equ       $100
           #else
@@ -124,7 +124,7 @@ VECPTR              rmb       2                   ; VECTOR TABLE POINTER
 ;*******************************************************************************
 
           #ifz VDG
-                    org       $B00
+                    org       $0B00
           #else
                     org       $F800
           #endif
@@ -278,7 +278,7 @@ OUTCH1              proc
 ;     ELSE REG A = INPUT & C IS SET
 
 CIDTA               proc
-          #ifnz     CHIPIO
+          #ifnz CHIPIO
                     lda       ACIAS
                     asra
                     bcc       Done@@
