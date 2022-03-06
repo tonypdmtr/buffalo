@@ -84,8 +84,7 @@ PTMADR              equ       $E000               ; DEFAULT ADDRESS FOR PTM
 ;*******************************************************************************
 
 LOWRAM              equ       $80                 ; USED FOR STK OVFLOW CHK
-                    #RAM
-                    org       $CF
+                    #RAM      $CF
 STACK               rmb       1                   ; STK PNTR WILL RUN UP TOWARD USER CODE
 
 CT                  rmb       1                   ; INPUT CHAR CT
@@ -120,15 +119,11 @@ IOPTR               rmb       2                   ; IO TABLE POINTER
 VECPTR              rmb       2                   ; VECTOR TABLE POINTER
 
 ;*******************************************************************************
-                    #ROM
-;*******************************************************************************
-
           #ifz VDG
-                    org       $0B00
+                    #ROM      $0B00
           #else
-                    org       $F800
+                    #ROM      $F800
           #endif
-
 ;*******************************************************************************
 ; JUMP TABLE TO SUBROUTINES
 ;*******************************************************************************
@@ -680,7 +675,7 @@ INPUT5              asl       1,x
                     inc       OVFL
 INPUT6              decb                          ; LEFT SHIFT 4 BITS
                     bne       INPUT5
-                    oraa      1,x                 ; ADD IN LSB
+                    ora       1,x                 ; ADD IN LSB
                     sta       1,x
                     inc       TEMP
                     bra       INPUT3
